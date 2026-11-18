@@ -21,6 +21,7 @@ import {
   computeSyllabusDepthStats,
   computeTaskBacklogStats,
   computeTodayFocusStats,
+  computeWeakUnitsForAction,
   computeWeekdayRhythm,
   computeWeeklySubjectBalanceAlerts,
 } from './analyticsMath';
@@ -384,6 +385,16 @@ test('session quality, weekday rhythm, 30d goal consistency, task backlog, paper
   assert.equal(syllabusDepth.learning, 1);
   assert.equal(syllabusDepth.totalRevisions, 5);
   assert.equal(syllabusDepth.lowConfidenceCount, 1);
+
+  // Pristine syllabus + no papers yields 0 weak action items
+  assert.equal(computeWeakUnitsForAction(fresh.syllabus, [], fresh.subjects).length, 0);
+
+  // Combining syllabus low confidence + past paper redo/silly tags ranks weak units accurately
+  const weakActions = computeWeakUnitsForAction(customSyllabus, papers, fresh.subjects);
+  assert.equal(weakActions.length, 2);
+  assert.ok(weakActions.some((w) => w.title === 'Optics' && w.redoCount === 1 && w.sillyCount === 1));
+  assert.ok(weakActions.some((w) => w.title === customSyllabus[0].titleEn && w.lowConfidenceCount === 1));
 });
+
 
 

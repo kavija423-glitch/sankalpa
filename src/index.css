@@ -55,12 +55,12 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(120, 120, 115, 0.25);
+  background: rgba(100, 116, 139, 0.25);
   border-radius: 9999px;
 }
 
 .dark ::-webkit-scrollbar-thumb {
-  background: rgba(156, 163, 175, 0.22);
+  background: rgba(148, 163, 184, 0.24);
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -197,18 +197,18 @@ export const ManualSessionModal: React.FC<ManualSessionModalProps> = ({
     >
       <form
         onSubmit={handleSubmit}
-        className="w-full sm:max-w-lg max-h-[92dvh] overflow-y-auto ios-scroll rounded-t-2xl sm:rounded-2xl bg-white dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834] p-5 sm:p-6 space-y-4 shadow-xl"
+        className="w-full sm:max-w-lg max-h-[92dvh] overflow-y-auto ios-scroll rounded-t-2xl sm:rounded-2xl bg-white dark:bg-[#0F1724] border border-[#DCE6F0] dark:border-[#1E2C40] p-5 sm:p-6 space-y-4 shadow-xl"
       >
         {/* Header */}
         <div className="flex items-start justify-between gap-3">
           <div>
             <h2
               id="manual-session-modal-title"
-              className="font-display text-lg font-bold text-[#141413] dark:text-[#F3F4F6]"
+              className="font-display text-lg font-bold text-[#0F172A] dark:text-[#F1F5F9]"
             >
               {editingSession ? 'Edit Manual Session' : 'Log Past Study Session'}
             </h2>
-            <p className="text-xs text-[#5A5A55] dark:text-[#9CA3AF] mt-0.5">
+            <p className="text-xs text-[#475569] dark:text-[#94A3B8] mt-0.5">
               Records study time to calendar timeline, focus analytics & Firestore sync
             </p>
           </div>
@@ -216,7 +216,7 @@ export const ManualSessionModal: React.FC<ManualSessionModalProps> = ({
             type="button"
             onClick={onClose}
             aria-label="Close log session modal"
-            className="p-2 rounded-lg text-[#5A5A55] dark:text-[#9CA3AF] hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer shrink-0"
+            className="p-2 rounded-lg text-[#475569] dark:text-[#94A3B8] hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
@@ -224,7 +224,7 @@ export const ManualSessionModal: React.FC<ManualSessionModalProps> = ({
 
         {/* Subject Pill Selector (Required) */}
         <div>
-          <span className="block text-xs font-medium text-[#141413] dark:text-[#F3F4F6] mb-1.5">
+          <span className="block text-xs font-medium text-[#0F172A] dark:text-[#F1F5F9] mb-1.5">
             Subject <span className="text-rose-500">*</span>
           </span>
           <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Study subject">
@@ -258,8 +258,8 @@ export const ManualSessionModal: React.FC<ManualSessionModalProps> = ({
                   }
                   className={`px-3 py-1.5 rounded-lg border text-xs font-medium flex items-center gap-2 transition-colors cursor-pointer ${
                     selected
-                      ? 'text-[#141413] dark:text-[#F3F4F6] font-semibold'
-                      : 'border-[#E5E5E0] dark:border-[#232834] bg-[#F7F7F5] dark:bg-[#0B0D11] text-[#5A5A55] dark:text-[#9CA3AF] hover:text-[#141413] dark:hover:text-[#F3F4F6]'
+                      ? 'text-[#0F172A] dark:text-[#F1F5F9] font-semibold'
+                      : 'border-[#DCE6F0] dark:border-[#1E2C40] bg-[#F4F8FB] dark:bg-[#080E17] text-[#475569] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#F1F5F9]'
                   }`}
                 >
                   <span
@@ -277,9 +277,9 @@ export const ManualSessionModal: React.FC<ManualSessionModalProps> = ({
         <div>
           <label
             htmlFor="manual-session-title"
-            className="block text-xs font-medium text-[#141413] dark:text-[#F3F4F6] mb-1"
+            className="block text-xs font-medium text-[#0F172A] dark:text-[#F1F5F9] mb-1"
           >
-            Session Title / Topic <span className="text-[#5A5A55] dark:text-[#9CA3AF] font-normal">(optional)</span>
+            Session Title / Topic <span className="text-[#475569] dark:text-[#94A3B8] font-normal">(optional)</span>
           </label>
           <input
             id="manual-session-title"
@@ -291,7 +291,7 @@ export const ManualSessionModal: React.FC<ManualSessionModalProps> = ({
                 ? `e.g., Hydrostatics Past Paper 2023 (defaults to ${activeSubjectCfg.label})`
                 : 'e.g., Hydrostatics Past Paper 2023'
             }
-            className="w-full rounded-lg bg-[#F7F7F5] dark:bg-[#0B0D11] border border-[#E5E5E0] dark:border-[#232834] px-3 py-2 text-sm text-[#141413] dark:text-[#F3F4F6] focus:outline-none focus:ring-2 focus:ring-[#4338CA]"
+            className="w-full rounded-lg bg-[#F4F8FB] dark:bg-[#080E17] border border-[#DCE6F0] dark:border-[#1E2C40] px-3 py-2 text-sm text-[#0F172A] dark:text-[#F1F5F9] focus:outline-none focus:ring-2 focus:ring-[#0EA5E9]"
           />
         </div>
 
@@ -300,9 +300,9 @@ export const ManualSessionModal: React.FC<ManualSessionModalProps> = ({
           <div>
             <label
               htmlFor="manual-session-task"
-              className="block text-xs font-medium text-[#141413] dark:text-[#F3F4F6] mb-1"
+              className="block text-xs font-medium text-[#0F172A] dark:text-[#F1F5F9] mb-1"
             >
-              Link to Existing Task <span className="text-[#5A5A55] dark:text-[#9CA3AF] font-normal">(optional)</span>
+              Link to Existing Task <span className="text-[#475569] dark:text-[#94A3B8] font-normal">(optional)</span>
             </label>
             <select
               id="manual-session-task"
@@ -313,7 +313,7 @@ export const ManualSessionModal: React.FC<ManualSessionModalProps> = ({
                   taskId: e.target.value ? e.target.value : null,
                 }))
               }
-              className="w-full rounded-lg bg-[#F7F7F5] dark:bg-[#0B0D11] border border-[#E5E5E0] dark:border-[#232834] px-3 py-2 text-xs sm:text-sm text-[#141413] dark:text-[#F3F4F6]"
+              className="w-full rounded-lg bg-[#F4F8FB] dark:bg-[#080E17] border border-[#DCE6F0] dark:border-[#1E2C40] px-3 py-2 text-xs sm:text-sm text-[#0F172A] dark:text-[#F1F5F9]"
             >
               <option value="">No linked task</option>
               {subjectTasks.map((t) => (
@@ -327,7 +327,7 @@ export const ManualSessionModal: React.FC<ManualSessionModalProps> = ({
           <div>
             <label
               htmlFor="manual-session-date"
-              className="block text-xs font-medium text-[#141413] dark:text-[#F3F4F6] mb-1"
+              className="block text-xs font-medium text-[#0F172A] dark:text-[#F1F5F9] mb-1"
             >
               Date <span className="text-rose-500">*</span>
             </label>
@@ -338,23 +338,23 @@ export const ManualSessionModal: React.FC<ManualSessionModalProps> = ({
               max={todayISO}
               value={draft.date}
               onChange={(e) => setDraft((prev) => ({ ...prev, date: e.target.value }))}
-              className="w-full rounded-lg bg-[#F7F7F5] dark:bg-[#0B0D11] border border-[#E5E5E0] dark:border-[#232834] px-3 py-2 text-sm font-mono text-[#141413] dark:text-[#F3F4F6]"
+              className="w-full rounded-lg bg-[#F4F8FB] dark:bg-[#080E17] border border-[#DCE6F0] dark:border-[#1E2C40] px-3 py-2 text-sm font-mono text-[#0F172A] dark:text-[#F1F5F9]"
             />
           </div>
         </div>
 
         {/* Time & Duration (Two Synced Modes) */}
-        <div className="rounded-xl border border-[#E5E5E0] dark:border-[#232834] bg-[#F7F7F5]/70 dark:bg-[#0B0D11]/70 p-3.5 space-y-3">
+        <div className="rounded-xl border border-[#DCE6F0] dark:border-[#1E2C40] bg-[#F4F8FB]/70 dark:bg-[#080E17]/70 p-3.5 space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="text-xs font-semibold text-[#141413] dark:text-[#F3F4F6] flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5 text-[#4338CA] dark:text-[#818CF8]" />
+            <span className="text-xs font-semibold text-[#0F172A] dark:text-[#F1F5F9] flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5 text-[#0EA5E9] dark:text-[#38BDF8]" />
               <span>Time & Duration</span>
             </span>
 
             <div
               role="tablist"
               aria-label="Time entry mode"
-              className="flex items-center p-0.5 rounded-lg bg-[#ECECE7] dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834]"
+              className="flex items-center p-0.5 rounded-lg bg-[#E6EEF5] dark:bg-[#0F1724] border border-[#DCE6F0] dark:border-[#1E2C40]"
             >
               <button
                 type="button"
@@ -364,8 +364,8 @@ export const ManualSessionModal: React.FC<ManualSessionModalProps> = ({
                 onClick={() => setDraft((prev) => ({ ...prev, timeMode: 'range' }))}
                 className={`px-2.5 py-1 rounded-md text-xs font-medium cursor-pointer ${
                   draft.timeMode === 'range'
-                    ? 'bg-white dark:bg-[#1F2430] text-[#141413] dark:text-[#F3F4F6] shadow-xs'
-                    : 'text-[#5A5A55] dark:text-[#9CA3AF]'
+                    ? 'bg-white dark:bg-[#172233] text-[#0F172A] dark:text-[#F1F5F9] shadow-xs'
+                    : 'text-[#475569] dark:text-[#94A3B8]'
                 }`}
               >
                 Time Range
@@ -378,8 +378,8 @@ export const ManualSessionModal: React.FC<ManualSessionModalProps> = ({
                 onClick={() => setDraft((prev) => ({ ...prev, timeMode: 'duration' }))}
                 className={`px-2.5 py-1 rounded-md text-xs font-medium cursor-pointer ${
                   draft.timeMode === 'duration'
-                    ? 'bg-white dark:bg-[#1F2430] text-[#141413] dark:text-[#F3F4F6] shadow-xs'
-                    : 'text-[#5A5A55] dark:text-[#9CA3AF]'
+                    ? 'bg-white dark:bg-[#172233] text-[#0F172A] dark:text-[#F1F5F9] shadow-xs'
+                    : 'text-[#475569] dark:text-[#94A3B8]'
                 }`}
               >
                 Duration
@@ -393,7 +393,7 @@ export const ManualSessionModal: React.FC<ManualSessionModalProps> = ({
                 <div>
                   <label
                     htmlFor="manual-start-time"
-                    className="block text-[11px] font-medium text-[#5A5A55] dark:text-[#9CA3AF] mb-1"
+                    className="block text-[11px] font-medium text-[#475569] dark:text-[#94A3B8] mb-1"
                   >
                     Start Time
                   </label>
@@ -403,13 +403,13 @@ export const ManualSessionModal: React.FC<ManualSessionModalProps> = ({
                     required
                     value={draft.startTime}
                     onChange={(e) => syncFromTimeRange(e.target.value, draft.endTime)}
-                    className="w-full rounded-lg bg-white dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834] px-3 py-2 text-sm font-mono text-[#141413] dark:text-[#F3F4F6]"
+                    className="w-full rounded-lg bg-white dark:bg-[#0F1724] border border-[#DCE6F0] dark:border-[#1E2C40] px-3 py-2 text-sm font-mono text-[#0F172A] dark:text-[#F1F5F9]"
                   />
                 </div>
                 <div>
                   <label
                     htmlFor="manual-end-time"
-                    className="block text-[11px] font-medium text-[#5A5A55] dark:text-[#9CA3AF] mb-1"
+                    className="block text-[11px] font-medium text-[#475569] dark:text-[#94A3B8] mb-1"
                   >
                     End Time
                   </label>
@@ -419,16 +419,16 @@ export const ManualSessionModal: React.FC<ManualSessionModalProps> = ({
                     required
                     value={draft.endTime}
                     onChange={(e) => syncFromTimeRange(draft.startTime, e.target.value)}
-                    className="w-full rounded-lg bg-white dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834] px-3 py-2 text-sm font-mono text-[#141413] dark:text-[#F3F4F6]"
+                    className="w-full rounded-lg bg-white dark:bg-[#0F1724] border border-[#DCE6F0] dark:border-[#1E2C40] px-3 py-2 text-sm font-mono text-[#0F172A] dark:text-[#F1F5F9]"
                   />
                 </div>
               </div>
               <div
                 data-testid="manual-duration-readout"
-                className="text-xs text-[#5A5A55] dark:text-[#9CA3AF] flex items-center justify-between"
+                className="text-xs text-[#475569] dark:text-[#94A3B8] flex items-center justify-between"
               >
                 <span>Calculated duration</span>
-                <strong className="font-mono tabular-nums text-[#4338CA] dark:text-[#A5B4FC]">
+                <strong className="font-mono tabular-nums text-[#0284C7] dark:text-[#7DD3FC]">
                   {validation.valid
                     ? formatDurationLabel(validation.durationMinutes)
                     : 'Invalid range'}
@@ -454,8 +454,8 @@ export const ManualSessionModal: React.FC<ManualSessionModalProps> = ({
                       }
                       className={`px-2.5 py-1 rounded-md border text-xs font-mono cursor-pointer ${
                         active
-                          ? 'border-[#4338CA] dark:border-[#6366F1] bg-[#4338CA] dark:bg-[#6366F1] text-white font-semibold'
-                          : 'border-[#E5E5E0] dark:border-[#232834] bg-white dark:bg-[#13161D] text-[#141413] dark:text-[#F3F4F6] hover:bg-black/5 dark:hover:bg-white/5'
+                          ? 'border-[#0EA5E9] dark:border-[#38BDF8] bg-[#0284C7] hover:bg-[#0369A1] dark:bg-[#38BDF8] dark:hover:bg-[#7DD3FC] text-white dark:text-[#07131E] font-semibold'
+                          : 'border-[#DCE6F0] dark:border-[#1E2C40] bg-white dark:bg-[#0F1724] text-[#0F172A] dark:text-[#F1F5F9] hover:bg-black/5 dark:hover:bg-white/5'
                       }`}
                     >
                       {preset.label}
@@ -469,7 +469,7 @@ export const ManualSessionModal: React.FC<ManualSessionModalProps> = ({
                 <div>
                   <label
                     htmlFor="manual-duration-hours"
-                    className="block text-[11px] font-medium text-[#5A5A55] dark:text-[#9CA3AF] mb-1"
+                    className="block text-[11px] font-medium text-[#475569] dark:text-[#94A3B8] mb-1"
                   >
                     Hours (0–12)
                   </label>
@@ -480,13 +480,13 @@ export const ManualSessionModal: React.FC<ManualSessionModalProps> = ({
                     max={12}
                     value={draft.hours}
                     onChange={(e) => syncFromDuration(Number(e.target.value), draft.minutes)}
-                    className="w-full rounded-lg bg-white dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834] px-2.5 py-1.5 text-sm font-mono text-[#141413] dark:text-[#F3F4F6]"
+                    className="w-full rounded-lg bg-white dark:bg-[#0F1724] border border-[#DCE6F0] dark:border-[#1E2C40] px-2.5 py-1.5 text-sm font-mono text-[#0F172A] dark:text-[#F1F5F9]"
                   />
                 </div>
                 <div>
                   <label
                     htmlFor="manual-duration-minutes"
-                    className="block text-[11px] font-medium text-[#5A5A55] dark:text-[#9CA3AF] mb-1"
+                    className="block text-[11px] font-medium text-[#475569] dark:text-[#94A3B8] mb-1"
                   >
                     Minutes (0–59)
                   </label>
@@ -497,14 +497,14 @@ export const ManualSessionModal: React.FC<ManualSessionModalProps> = ({
                     max={59}
                     value={draft.minutes}
                     onChange={(e) => syncFromDuration(draft.hours, Number(e.target.value))}
-                    className="w-full rounded-lg bg-white dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834] px-2.5 py-1.5 text-sm font-mono text-[#141413] dark:text-[#F3F4F6]"
+                    className="w-full rounded-lg bg-white dark:bg-[#0F1724] border border-[#DCE6F0] dark:border-[#1E2C40] px-2.5 py-1.5 text-sm font-mono text-[#0F172A] dark:text-[#F1F5F9]"
                   />
                 </div>
                 <div className="col-span-2">
                   <div className="flex items-center justify-between mb-1">
                     <label
                       htmlFor="manual-anchor-time"
-                      className="text-[11px] font-medium text-[#5A5A55] dark:text-[#9CA3AF]"
+                      className="text-[11px] font-medium text-[#475569] dark:text-[#94A3B8]"
                     >
                       {draft.durationAnchor === 'end' ? 'End Time' : 'Start Time'}
                     </label>
@@ -515,7 +515,7 @@ export const ManualSessionModal: React.FC<ManualSessionModalProps> = ({
                           draft.durationAnchor === 'end' ? 'start' : 'end';
                         syncFromDuration(draft.hours, draft.minutes, nextAnchor);
                       }}
-                      className="text-[10px] font-medium text-[#4338CA] dark:text-[#A5B4FC] hover:underline cursor-pointer"
+                      className="text-[10px] font-medium text-[#0284C7] dark:text-[#7DD3FC] hover:underline cursor-pointer"
                     >
                       Switch to {draft.durationAnchor === 'end' ? 'Start' : 'End'}
                     </button>
@@ -532,14 +532,14 @@ export const ManualSessionModal: React.FC<ManualSessionModalProps> = ({
                         e.target.value
                       )
                     }
-                    className="w-full rounded-lg bg-white dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834] px-2.5 py-1.5 text-sm font-mono text-[#141413] dark:text-[#F3F4F6]"
+                    className="w-full rounded-lg bg-white dark:bg-[#0F1724] border border-[#DCE6F0] dark:border-[#1E2C40] px-2.5 py-1.5 text-sm font-mono text-[#0F172A] dark:text-[#F1F5F9]"
                   />
                 </div>
               </div>
 
-              <div className="text-xs text-[#5A5A55] dark:text-[#9CA3AF] flex items-center justify-between">
+              <div className="text-xs text-[#475569] dark:text-[#94A3B8] flex items-center justify-between">
                 <span>Computed window</span>
-                <strong className="font-mono tabular-nums text-[#4338CA] dark:text-[#A5B4FC]">
+                <strong className="font-mono tabular-nums text-[#0284C7] dark:text-[#7DD3FC]">
                   {validation.valid
                     ? `${minutesToHHMM(validation.startMinutes)} – ${minutesToHHMM(validation.endMinutes)} (${formatDurationLabel(validation.durationMinutes)})`
                     : 'Adjust time or duration'}
@@ -553,9 +553,9 @@ export const ManualSessionModal: React.FC<ManualSessionModalProps> = ({
         <div>
           <label
             htmlFor="manual-session-notes"
-            className="block text-xs font-medium text-[#141413] dark:text-[#F3F4F6] mb-1"
+            className="block text-xs font-medium text-[#0F172A] dark:text-[#F1F5F9] mb-1"
           >
-            Notes <span className="text-[#5A5A55] dark:text-[#9CA3AF] font-normal">(optional)</span>
+            Notes <span className="text-[#475569] dark:text-[#94A3B8] font-normal">(optional)</span>
           </label>
           <textarea
             id="manual-session-notes"
@@ -563,7 +563,7 @@ export const ManualSessionModal: React.FC<ManualSessionModalProps> = ({
             value={draft.notes}
             onChange={(e) => setDraft((prev) => ({ ...prev, notes: e.target.value }))}
             placeholder="Study reflections, formulas revised, or completed question numbers..."
-            className="w-full rounded-lg bg-[#F7F7F5] dark:bg-[#0B0D11] border border-[#E5E5E0] dark:border-[#232834] px-3 py-2 text-sm text-[#141413] dark:text-[#F3F4F6] focus:outline-none focus:ring-2 focus:ring-[#4338CA]"
+            className="w-full rounded-lg bg-[#F4F8FB] dark:bg-[#080E17] border border-[#DCE6F0] dark:border-[#1E2C40] px-3 py-2 text-sm text-[#0F172A] dark:text-[#F1F5F9] focus:outline-none focus:ring-2 focus:ring-[#0EA5E9]"
           />
         </div>
 
@@ -578,7 +578,7 @@ export const ManualSessionModal: React.FC<ManualSessionModalProps> = ({
         )}
 
         {/* Footer Actions */}
-        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#E5E5E0] dark:border-[#232834]">
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[#DCE6F0] dark:border-[#1E2C40]">
           {editingSession && onDelete ? (
             confirmingDelete ? (
               <div className="flex items-center gap-1.5">
@@ -596,7 +596,7 @@ export const ManualSessionModal: React.FC<ManualSessionModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setConfirmingDelete(false)}
-                  className="px-2.5 py-2 rounded-lg border border-[#E5E5E0] dark:border-[#232834] text-xs font-medium text-[#5A5A55] dark:text-[#9CA3AF] cursor-pointer"
+                  className="px-2.5 py-2 rounded-lg border border-[#DCE6F0] dark:border-[#1E2C40] text-xs font-medium text-[#475569] dark:text-[#94A3B8] cursor-pointer"
                 >
                   Keep
                 </button>
@@ -620,7 +620,7 @@ export const ManualSessionModal: React.FC<ManualSessionModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-lg border border-[#E5E5E0] dark:border-[#232834] text-xs font-medium text-[#141413] dark:text-[#F3F4F6] cursor-pointer"
+              className="px-4 py-2 rounded-lg border border-[#DCE6F0] dark:border-[#1E2C40] text-xs font-medium text-[#0F172A] dark:text-[#F1F5F9] cursor-pointer"
             >
               Cancel
             </button>
@@ -628,7 +628,7 @@ export const ManualSessionModal: React.FC<ManualSessionModalProps> = ({
               type="submit"
               data-testid="save-manual-session"
               disabled={!validation.valid}
-              className="px-4 py-2 rounded-lg bg-[#4338CA] dark:bg-[#6366F1] text-white text-xs font-semibold hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              className="px-4 py-2 rounded-lg bg-[#0284C7] hover:bg-[#0369A1] dark:bg-[#38BDF8] dark:hover:bg-[#7DD3FC] text-white dark:text-[#07131E] text-xs font-semibold hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
             >
               {editingSession ? 'Save Changes' : 'Save Session'}
             </button>

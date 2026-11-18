@@ -85,22 +85,22 @@ function drawCanvasTimerFrame(
   ctx.clearRect(0, 0, width, height);
 
   // Background fill matching Sankalpa dark/light slate
-  ctx.fillStyle = isDark ? '#13161D' : '#FFFFFF';
+  ctx.fillStyle = isDark ? '#0F1724' : '#FFFFFF';
   ctx.fillRect(0, 0, width, height);
 
   // Subtle hairline frame
-  ctx.strokeStyle = isDark ? '#232834' : '#E5E5E0';
+  ctx.strokeStyle = isDark ? '#1E2C40' : '#DCE6F0';
   ctx.lineWidth = 2;
   ctx.strokeRect(2, 2, width - 4, height - 4);
 
   // Subject color dot
-  ctx.fillStyle = opts.subjectColor || '#4338CA';
+  ctx.fillStyle = opts.subjectColor || '#0EA5E9';
   ctx.beginPath();
   ctx.arc(38, 54, 10, 0, Math.PI * 2);
   ctx.fill();
 
   // Session title & status
-  ctx.fillStyle = isDark ? '#F3F4F6' : '#141413';
+  ctx.fillStyle = isDark ? '#F1F5F9' : '#0F172A';
   ctx.font = '600 26px "Plus Jakarta Sans", system-ui, sans-serif';
   ctx.textBaseline = 'middle';
   const maxTitleWidth = width - 88;
@@ -110,18 +110,18 @@ function drawCanvasTimerFrame(
   }
   ctx.fillText(titleText, 60, 54);
 
-  ctx.fillStyle = isDark ? '#9CA3AF' : '#5A5A55';
+  ctx.fillStyle = isDark ? '#94A3B8' : '#475569';
   ctx.font = '500 20px "Plus Jakarta Sans", system-ui, sans-serif';
   ctx.fillText(`${opts.subjectLabel} · ${opts.statusLabel}`, 30, 104);
 
   // Large tabular clock readout
   ctx.fillStyle = opts.isRunning
     ? isDark
-      ? '#A5B4FC'
-      : '#4338CA'
+      ? '#38BDF8'
+      : '#0284C7'
     : isDark
-    ? '#F3F4F6'
-    : '#141413';
+    ? '#F1F5F9'
+    : '#0F172A';
   ctx.font = '700 62px "JetBrains Mono", ui-monospace, monospace';
   ctx.textAlign = 'right';
   ctx.fillText(opts.clockText, width - 28, 134);
@@ -253,7 +253,7 @@ export function usePictureInPicture({
         });
         syncStylesToPipWindow(pipWin);
         pipWin.document.body.className =
-          'm-0 p-0 overflow-hidden bg-[#F7F7F5] dark:bg-[#0B0D11] text-[#141413] dark:text-[#F3F4F6] select-none';
+          'm-0 p-0 overflow-hidden bg-[#F4F8FB] dark:bg-[#080E17] text-[#0F172A] dark:text-[#F1F5F9] select-none';
 
         const container = pipWin.document.createElement('div');
         container.className = 'w-full h-full';

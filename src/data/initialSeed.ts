@@ -30,7 +30,7 @@ export function createInitialAppState(nowDate: Date = new Date()): AppState {
         id: 'general',
         label: 'General Revision',
         sinhalaLabel: 'පොදු පුනරීක්ෂණ',
-        color: '#6366F1',
+        color: '#06B6D4',
       },
     },
     tasks: [],

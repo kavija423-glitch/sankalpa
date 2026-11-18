@@ -651,6 +651,51 @@ export default function App() {
     mutateState((prev) => ({ ...prev, tasks: [newTask, ...prev.tasks] }));
   };
 
+  const handleCreateWeakUnitTask = (
+    subject: PaperSubjectKey,
+    unitTitle: string,
+    reason?: string
+  ) => {
+    const now = Date.now();
+    const newTask: TaskItem = {
+      id: `tsk_${now}_${Math.random().toString(36).slice(2, 6)}`,
+      title: `Revise & practice: ${unitTitle}`,
+      subject,
+      durationMinutes: 45,
+      priority: 'high',
+      dueDate: toISODateLocal(new Date()),
+      recurrence: 'none',
+      completed: false,
+      completedAt: null,
+      notes: reason ? `Flagged in Exam Readiness (${reason})` : 'Flagged in Exam Readiness',
+      subtasks: [],
+      scheduledBlockId: null,
+      updatedAt: now,
+    };
+    mutateState((prev) => ({ ...prev, tasks: [newTask, ...prev.tasks] }));
+  };
+
+  const handleStartWeakUnitFocus = (subject: PaperSubjectKey, unitTitle: string) => {
+    const now = Date.now();
+    setNowMs(now);
+    mutateState((prev) => ({
+      ...prev,
+      activeTimer: {
+        isRunning: true,
+        mode: 'pomodoro_50',
+        phase: 'focus',
+        startedAt: now,
+        accumulatedMs: 0,
+        targetDurationMs: 45 * 60 * 1000,
+        title: `Revise: ${unitTitle}`,
+        subject,
+        taskId: null,
+        blockId: null,
+      },
+    }));
+    setActiveTab('timer');
+  };
+
   // Settings
   const handleUpdateSettings = (patch: Partial<AppSettings>) => {
     const now = Date.now();
@@ -709,16 +754,16 @@ export default function App() {
   };
 
   return (
-    <div className="h-dvh w-full flex flex-col md:flex-row overflow-hidden bg-[#F7F7F5] dark:bg-[#0B0D11] text-[#141413] dark:text-[#F3F4F6]">
+    <div className="h-dvh w-full flex flex-col md:flex-row overflow-hidden bg-[#F4F8FB] dark:bg-[#080E17] text-[#0F172A] dark:text-[#F1F5F9]">
       {/* Desktop Collapsible Left Sidebar */}
       <aside
         data-collapsed={sidebarCollapsed ? 'true' : 'false'}
-        className={`hidden md:flex shrink-0 flex-col border-r border-[#E5E5E0] dark:border-[#232834] bg-white dark:bg-[#13161D] transition-[width] duration-200 ease-out overflow-hidden ${
+        className={`hidden md:flex shrink-0 flex-col border-r border-[#DCE6F0] dark:border-[#1E2C40] bg-white dark:bg-[#0F1724] transition-[width] duration-200 ease-out overflow-hidden ${
           sidebarCollapsed ? 'md:w-[68px]' : 'md:w-60'
         }`}
       >
         <div
-          className={`border-b border-[#E5E5E0] dark:border-[#232834] flex ${
+          className={`border-b border-[#DCE6F0] dark:border-[#1E2C40] flex ${
             sidebarCollapsed
               ? 'flex-col items-center gap-2 py-3 px-2'
               : 'items-center justify-between px-4 py-4'
@@ -731,7 +776,7 @@ export default function App() {
               onClick={toggleTheme}
               aria-label={state.settings.theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
               title={state.settings.theme === 'dark' ? 'Light theme' : 'Dark theme'}
-              className="p-2 rounded-lg text-[#5A5A55] dark:text-[#9CA3AF] hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
+              className="p-2 rounded-lg text-[#475569] dark:text-[#94A3B8] hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
             >
               {state.settings.theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
@@ -741,7 +786,7 @@ export default function App() {
               aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
               aria-expanded={!sidebarCollapsed}
               title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-              className="p-2 rounded-lg text-[#5A5A55] dark:text-[#9CA3AF] hover:bg-black/5 dark:hover:bg-white/5 hover:text-[#141413] dark:hover:text-[#F3F4F6] cursor-pointer"
+              className="p-2 rounded-lg text-[#475569] dark:text-[#94A3B8] hover:bg-black/5 dark:hover:bg-white/5 hover:text-[#0F172A] dark:hover:text-[#F1F5F9] cursor-pointer"
             >
               {sidebarCollapsed ? (
                 <PanelLeftOpen className="w-4 h-4" />
@@ -769,12 +814,12 @@ export default function App() {
                 aria-current={active ? 'page' : undefined}
                 aria-label={item.label}
                 title={sidebarCollapsed ? item.label : undefined}
-                className={`w-full py-2.5 rounded-xl text-sm font-medium flex items-center cursor-pointer whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4338CA] ${
+                className={`w-full py-2.5 rounded-xl text-sm font-medium flex items-center cursor-pointer whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0EA5E9] ${
                   sidebarCollapsed ? 'justify-center px-0' : 'gap-3 px-3'
                 } ${
                   active
-                    ? 'bg-[#4338CA]/10 dark:bg-[#6366F1]/15 text-[#4338CA] dark:text-[#A5B4FC] font-semibold'
-                    : 'text-[#5A5A55] dark:text-[#9CA3AF] hover:bg-black/5 dark:hover:bg-white/5 hover:text-[#141413] dark:hover:text-[#F3F4F6]'
+                    ? 'bg-[#0EA5E9]/12 dark:bg-[#38BDF8]/15 text-[#0284C7] dark:text-[#7DD3FC] font-semibold'
+                    : 'text-[#475569] dark:text-[#94A3B8] hover:bg-black/5 dark:hover:bg-white/5 hover:text-[#0F172A] dark:hover:text-[#F1F5F9]'
                 }`}
               >
                 <Icon className="w-4 h-4 shrink-0" />
@@ -785,7 +830,7 @@ export default function App() {
         </nav>
 
         <div
-          className={`border-t border-[#E5E5E0] dark:border-[#232834] space-y-2.5 empty:hidden ${
+          className={`border-t border-[#DCE6F0] dark:border-[#1E2C40] space-y-2.5 empty:hidden ${
             sidebarCollapsed ? 'p-2 flex flex-col items-center' : 'p-4'
           }`}
         >
@@ -803,7 +848,7 @@ export default function App() {
       </aside>
 
       {/* Mobile Compact Header (<= 52px to stay well inside 15% sticky cap) */}
-      <header className="md:hidden shrink-0 h-13 px-4 border-b border-[#E5E5E0] dark:border-[#232834] bg-white/95 dark:bg-[#13161D]/95 backdrop-blur-md flex items-center justify-between gap-4">
+      <header className="md:hidden shrink-0 h-13 px-4 border-b border-[#DCE6F0] dark:border-[#1E2C40] bg-white/95 dark:bg-[#0F1724]/95 backdrop-blur-md flex items-center justify-between gap-4">
         <BrandLogo compact />
         <div className="flex items-center gap-1.5">
           <PWAInstallButton variant="compact" />
@@ -816,7 +861,7 @@ export default function App() {
             type="button"
             onClick={toggleTheme}
             aria-label={state.settings.theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
-            className="w-10 h-10 rounded-lg flex items-center justify-center text-[#5A5A55] dark:text-[#9CA3AF] cursor-pointer"
+            className="w-10 h-10 rounded-lg flex items-center justify-center text-[#475569] dark:text-[#94A3B8] cursor-pointer"
           >
             {state.settings.theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
           </button>
@@ -826,8 +871,8 @@ export default function App() {
             aria-label="Open workspace settings"
             className={`w-10 h-10 rounded-lg flex items-center justify-center cursor-pointer ${
               activeTab === 'settings'
-                ? 'text-[#4338CA] dark:text-[#A5B4FC]'
-                : 'text-[#5A5A55] dark:text-[#9CA3AF]'
+                ? 'text-[#0284C7] dark:text-[#7DD3FC]'
+                : 'text-[#475569] dark:text-[#94A3B8]'
             }`}
           >
             <Settings className="w-4 h-4" />
@@ -919,6 +964,9 @@ export default function App() {
                 examCountdowns={state.examCountdowns}
                 onOpenLogSession={openNewManualSession}
                 onEditManualSession={openEditManualSession}
+                onCreateWeakUnitTask={handleCreateWeakUnitTask}
+                onStartWeakUnitFocus={handleStartWeakUnitFocus}
+                onNavigateTab={setActiveTab}
               />
             )}
             {activeTab === 'settings' && (
@@ -977,7 +1025,7 @@ export default function App() {
       {/* Mobile Fixed Bottom Tab Bar (Compact h-14 = 56px) */}
       <nav
         aria-label="Mobile bottom navigation"
-        className="md:hidden fixed bottom-0 left-0 right-0 z-30 h-14 bg-white/95 dark:bg-[#13161D]/95 backdrop-blur-md border-t border-[#E5E5E0] dark:border-[#232834] grid grid-cols-6 items-center"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-30 h-14 bg-white/95 dark:bg-[#0F1724]/95 backdrop-blur-md border-t border-[#DCE6F0] dark:border-[#1E2C40] grid grid-cols-6 items-center"
       >
         {NAV_ITEMS.filter((item) => item.id !== 'settings').map((item) => {
           const Icon = item.icon;
@@ -989,8 +1037,8 @@ export default function App() {
               onClick={() => setActiveTab(item.id)}
               className={`h-full flex flex-col items-center justify-center gap-0.5 cursor-pointer ${
                 active
-                  ? 'text-[#4338CA] dark:text-[#A5B4FC] font-semibold'
-                  : 'text-[#5A5A55] dark:text-[#9CA3AF]'
+                  ? 'text-[#0284C7] dark:text-[#7DD3FC] font-semibold'
+                  : 'text-[#475569] dark:text-[#94A3B8]'
               }`}
             >
               <Icon className="w-4 h-4" />

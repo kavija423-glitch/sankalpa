@@ -764,7 +764,7 @@ export function computeSyllabusMasterySummary(
     return {
       subject: key,
       label: subjects[key]?.label ?? key,
-      color: subjects[key]?.color ?? '#6366F1',
+      color: subjects[key]?.color ?? '#0EA5E9',
       total,
       mastered,
       revisedOrMastered,
@@ -1254,7 +1254,7 @@ export function computeSyllabusDepthStats(
     return {
       subject: key,
       label: subjects[key]?.label ?? key,
-      color: subjects[key]?.color ?? '#6366F1',
+      color: subjects[key]?.color ?? '#0EA5E9',
       total,
       notStarted: sNotStarted,
       learning: sLearning,
@@ -1281,3 +1281,118 @@ export function computeSyllabusDepthStats(
     bySubject,
   };
 }
+
+export interface WeakSyllabusUnitActionItem {
+  key: string;
+  subject: PaperSubjectKey;
+  subjectLabel: string;
+  subjectColor: string;
+  title: string;
+  reason: string;
+  redoCount: number;
+  sillyCount: number;
+  lowConfidenceCount: number;
+  learningCount: number;
+  severityScore: number;
+}
+
+/**
+ * Combines Past Paper mistake tags (redo/silly) and Syllabus low-confidence / active learning units
+ * into a prioritized list for one-click revision task & focus timer actions.
+ */
+export function computeWeakUnitsForAction(
+  syllabus: SyllabusUnit[],
+  papers: PastPaper[],
+  subjects: Record<SubjectKey, SubjectConfig>,
+  limit = 6
+): WeakSyllabusUnitActionItem[] {
+  const bucketMap = new Map<string, WeakSyllabusUnitActionItem>();
+
+  const ensureBucket = (subject: PaperSubjectKey, title: string): WeakSyllabusUnitActionItem => {
+    const cleanTitle = title.trim();
+    const key = `${subject}::${cleanTitle.toLowerCase()}`;
+    const existing = bucketMap.get(key);
+    if (existing) return existing;
+    const item: WeakSyllabusUnitActionItem = {
+      key,
+      subject,
+      subjectLabel: subjects[subject]?.label ?? subject,
+      subjectColor: subjects[subject]?.color ?? '#0EA5E9',
+      title: cleanTitle,
+      reason: '',
+      redoCount: 0,
+      sillyCount: 0,
+      lowConfidenceCount: 0,
+      learningCount: 0,
+      severityScore: 0,
+    };
+    bucketMap.set(key, item);
+    return item;
+  };
+
+  // 1. Syllabus units with active weak signals (confidence <= 2 on started topics or mastery === 'learning')
+  for (const unit of syllabus) {
+    let lowConf = 0;
+    let learning = 0;
+    for (const st of unit.subtopics) {
+      const conf = Math.max(1, Math.min(5, st.confidence || 1));
+      if (st.mastery === 'learning') learning += 1;
+      if (st.mastery !== 'not_started' && conf <= 2) lowConf += 1;
+    }
+    if (lowConf > 0 || learning > 0) {
+      const bucket = ensureBucket(unit.subject, unit.titleEn);
+      bucket.lowConfidenceCount += lowConf;
+      bucket.learningCount += learning;
+      bucket.severityScore += lowConf * 3 + learning * 2;
+    }
+  }
+
+  // 2. Past Paper redo & silly mistakes grouped by subject + unitTag (matching existing syllabus unit when possible)
+  for (const paper of papers) {
+    for (const q of paper.questions) {
+      if ((q.status !== 'redo' && q.status !== 'silly') || !q.unitTag.trim()) continue;
+      const tag = q.unitTag.trim();
+      // Check if an existing syllabus bucket for this subject matches closely
+      const lowerTag = tag.toLowerCase();
+      let matchedBucket: WeakSyllabusUnitActionItem | undefined;
+      for (const candidate of bucketMap.values()) {
+        if (
+          candidate.subject === paper.subject &&
+          (candidate.title.toLowerCase() === lowerTag ||
+            candidate.title.toLowerCase().includes(lowerTag) ||
+            lowerTag.includes(candidate.title.toLowerCase()))
+        ) {
+          matchedBucket = candidate;
+          break;
+        }
+      }
+      const target = matchedBucket ?? ensureBucket(paper.subject, tag);
+      if (q.status === 'redo') {
+        target.redoCount += 1;
+        target.severityScore += 3;
+      } else {
+        target.sillyCount += 1;
+        target.severityScore += 2;
+      }
+    }
+  }
+
+  return Array.from(bucketMap.values())
+    .map((item) => {
+      const parts: string[] = [];
+      if (item.redoCount > 0) parts.push(`${item.redoCount} redo`);
+      if (item.sillyCount > 0) parts.push(`${item.sillyCount} silly`);
+      if (item.lowConfidenceCount > 0) {
+        parts.push(`${item.lowConfidenceCount} low confidence`);
+      } else if (item.learningCount > 0) {
+        parts.push(`${item.learningCount} learning`);
+      }
+      return {
+        ...item,
+        reason: parts.join(' · '),
+      };
+    })
+    .sort((a, b) => b.severityScore - a.severityScore || a.title.localeCompare(b.title))
+    .slice(0, limit);
+}
+

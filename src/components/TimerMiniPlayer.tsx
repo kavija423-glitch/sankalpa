@@ -152,8 +152,8 @@ export const TimerMiniPlayer: React.FC<TimerMiniPlayerProps> = ({
   };
 
   const surfaceClasses = isGhost
-    ? 'bg-white/55 dark:bg-[#13161D]/55'
-    : 'bg-white/75 dark:bg-[#13161D]/75';
+    ? 'bg-white/55 dark:bg-[#0F1724]/55'
+    : 'bg-white/75 dark:bg-[#0F1724]/75';
 
   const isRightCorner = prefs.corner === 'top-right' || prefs.corner === 'bottom-right';
   const actionsOpen = isInteracting || isPipOpen;
@@ -180,7 +180,7 @@ export const TimerMiniPlayer: React.FC<TimerMiniPlayerProps> = ({
             ? { transform: `translate3d(${dragCoords.left}px, ${dragCoords.top}px, 0)` }
             : undefined
         }
-        className={`hidden sm:flex fixed z-[60] group items-center h-12 rounded-xl border border-[#E5E5E0]/80 dark:border-[#232834]/80 backdrop-blur-md backdrop-saturate-150 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.2),0_10px_28px_-6px_rgba(0,0,0,0.18)] px-2.5 gap-2 select-none ${surfaceClasses} ${
+        className={`hidden sm:flex fixed z-[60] group items-center h-12 rounded-xl border border-[#DCE6F0]/80 dark:border-[#1E2C40]/80 backdrop-blur-md backdrop-saturate-150 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.2),0_10px_28px_-6px_rgba(0,0,0,0.18)] px-2.5 gap-2 select-none ${surfaceClasses} ${
           isDragging
             ? 'top-0 left-0 cursor-grabbing opacity-100 transition-none'
             : `${CORNER_POSITION_CLASSES[prefs.corner]} cursor-grab transition-opacity duration-[180ms] ease-[cubic-bezier(0.16,1,0.3,1)] ${
@@ -200,7 +200,7 @@ export const TimerMiniPlayer: React.FC<TimerMiniPlayerProps> = ({
         >
           <span
             data-testid="floating-timer-grip"
-            className="text-[#5A5A55]/70 dark:text-[#9CA3AF]/70 flex items-center shrink-0"
+            className="text-[#475569]/70 dark:text-[#94A3B8]/70 flex items-center shrink-0"
             title="Drag to any corner"
             aria-hidden="true"
           >
@@ -212,12 +212,12 @@ export const TimerMiniPlayer: React.FC<TimerMiniPlayerProps> = ({
             title={subject.label}
             aria-hidden="true"
           />
-          <span className="text-[11px] font-medium text-[#5A5A55] dark:text-[#9CA3AF] max-w-[90px] truncate">
+          <span className="text-[11px] font-medium text-[#475569] dark:text-[#94A3B8] max-w-[90px] truncate">
             {timer.title.trim() || subject.label}
           </span>
           <span
             data-testid="floating-timer-clock"
-            className="font-mono tabular-nums text-lg font-semibold tracking-tight text-[#141413] dark:text-[#F3F4F6] whitespace-nowrap"
+            className="font-mono tabular-nums text-lg font-semibold tracking-tight text-[#0F172A] dark:text-[#F1F5F9] whitespace-nowrap"
           >
             {clockStr}
           </span>
@@ -238,7 +238,7 @@ export const TimerMiniPlayer: React.FC<TimerMiniPlayerProps> = ({
             onClick={onToggleRun}
             aria-label={timer.isRunning ? 'Pause study timer' : 'Resume study timer'}
             title={timer.isRunning ? 'Pause' : 'Resume'}
-            className="w-9 h-9 rounded-lg bg-[#4338CA] dark:bg-[#6366F1] text-white flex items-center justify-center hover:opacity-90 transition-opacity shrink-0 cursor-pointer"
+            className="w-9 h-9 rounded-lg bg-[#0284C7] hover:bg-[#0369A1] dark:bg-[#38BDF8] dark:hover:bg-[#7DD3FC] text-white dark:text-[#07131E] flex items-center justify-center hover:opacity-90 transition-opacity shrink-0 cursor-pointer"
           >
             {timer.isRunning ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
           </button>
@@ -248,7 +248,7 @@ export const TimerMiniPlayer: React.FC<TimerMiniPlayerProps> = ({
             onClick={onRequestStop}
             aria-label="Finish and log session"
             title="Stop & log session"
-            className="w-9 h-9 rounded-lg border border-[#E5E5E0]/90 dark:border-[#232834]/90 text-[#141413] dark:text-[#F3F4F6] flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/10 transition-colors shrink-0 cursor-pointer"
+            className="w-9 h-9 rounded-lg border border-[#DCE6F0]/90 dark:border-[#1E2C40]/90 text-[#0F172A] dark:text-[#F1F5F9] flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/10 transition-colors shrink-0 cursor-pointer"
           >
             <Square className="w-3.5 h-3.5" />
           </button>
@@ -258,7 +258,7 @@ export const TimerMiniPlayer: React.FC<TimerMiniPlayerProps> = ({
             onClick={onOpenTimer}
             aria-label="Expand timer view"
             title="Open full Study Timer"
-            className="w-9 h-9 rounded-lg text-[#5A5A55] dark:text-[#9CA3AF] flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/10 hover:text-[#141413] dark:hover:text-[#F3F4F6] transition-colors shrink-0 cursor-pointer"
+            className="w-9 h-9 rounded-lg text-[#475569] dark:text-[#94A3B8] flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/10 hover:text-[#0F172A] dark:hover:text-[#F1F5F9] transition-colors shrink-0 cursor-pointer"
           >
             <Maximize2 className="w-3.5 h-3.5" />
           </button>
@@ -280,8 +280,8 @@ export const TimerMiniPlayer: React.FC<TimerMiniPlayerProps> = ({
               }
               className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors shrink-0 cursor-pointer ${
                 isPipOpen
-                  ? 'bg-[#4338CA]/15 dark:bg-[#6366F1]/25 text-[#4338CA] dark:text-[#A5B4FC]'
-                  : 'text-[#5A5A55] dark:text-[#9CA3AF] hover:bg-black/5 dark:hover:bg-white/10 hover:text-[#141413] dark:hover:text-[#F3F4F6]'
+                  ? 'bg-[#0EA5E9]/15 dark:bg-[#38BDF8]/20 text-[#0284C7] dark:text-[#7DD3FC]'
+                  : 'text-[#475569] dark:text-[#94A3B8] hover:bg-black/5 dark:hover:bg-white/10 hover:text-[#0F172A] dark:hover:text-[#F1F5F9]'
               }`}
             >
               <PictureInPicture2 className="w-3.5 h-3.5" />
@@ -300,8 +300,8 @@ export const TimerMiniPlayer: React.FC<TimerMiniPlayerProps> = ({
             title={isGhost ? 'Ghost opacity (~55%)' : 'Frosted glass opacity (~75%)'}
             className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors shrink-0 cursor-pointer ${
               isGhost
-                ? 'bg-black/5 dark:bg-white/10 text-[#141413] dark:text-[#F3F4F6]'
-                : 'text-[#5A5A55] dark:text-[#9CA3AF] hover:bg-black/5 dark:hover:bg-white/10'
+                ? 'bg-black/5 dark:bg-white/10 text-[#0F172A] dark:text-[#F1F5F9]'
+                : 'text-[#475569] dark:text-[#94A3B8] hover:bg-black/5 dark:hover:bg-white/10'
             }`}
           >
             <Eye className="w-3.5 h-3.5" />
@@ -312,7 +312,7 @@ export const TimerMiniPlayer: React.FC<TimerMiniPlayerProps> = ({
         {pipError && (
           <div
             role="status"
-            className="absolute -top-9 right-0 whitespace-nowrap rounded-lg bg-[#141413] dark:bg-[#1F2430] text-white text-[11px] px-2.5 py-1 flex items-center gap-1.5 shadow-md"
+            className="absolute -top-9 right-0 whitespace-nowrap rounded-lg bg-[#0F172A] dark:bg-[#172233] text-white text-[11px] px-2.5 py-1 flex items-center gap-1.5 shadow-md"
           >
             <span>{pipError}</span>
             <button
@@ -330,7 +330,7 @@ export const TimerMiniPlayer: React.FC<TimerMiniPlayerProps> = ({
       {/* Mobile Slim Centered Pill Docked Above Bottom Navigation Bar (h-11 = 44px) */}
       <div
         data-testid="timer-mini-player-mobile"
-        className={`sm:hidden fixed bottom-16 left-1/2 -translate-x-1/2 z-[60] h-11 max-w-[calc(100vw-24px)] rounded-full border border-[#E5E5E0]/80 dark:border-[#232834]/80 backdrop-blur-md backdrop-saturate-150 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.2),0_8px_24px_-6px_rgba(0,0,0,0.18)] px-3 flex items-center gap-2 ${surfaceClasses}`}
+        className={`sm:hidden fixed bottom-16 left-1/2 -translate-x-1/2 z-[60] h-11 max-w-[calc(100vw-24px)] rounded-full border border-[#DCE6F0]/80 dark:border-[#1E2C40]/80 backdrop-blur-md backdrop-saturate-150 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.2),0_8px_24px_-6px_rgba(0,0,0,0.18)] px-3 flex items-center gap-2 ${surfaceClasses}`}
       >
         <button
           type="button"
@@ -343,10 +343,10 @@ export const TimerMiniPlayer: React.FC<TimerMiniPlayerProps> = ({
             style={{ backgroundColor: subject.color }}
             aria-hidden="true"
           />
-          <span className="text-[11px] font-medium text-[#5A5A55] dark:text-[#9CA3AF] max-w-[72px] truncate">
+          <span className="text-[11px] font-medium text-[#475569] dark:text-[#94A3B8] max-w-[72px] truncate">
             {timer.title.trim() || subject.label}
           </span>
-          <span className="font-mono tabular-nums text-base font-semibold text-[#141413] dark:text-[#F3F4F6] whitespace-nowrap">
+          <span className="font-mono tabular-nums text-base font-semibold text-[#0F172A] dark:text-[#F1F5F9] whitespace-nowrap">
             {clockStr}
           </span>
         </button>
@@ -356,7 +356,7 @@ export const TimerMiniPlayer: React.FC<TimerMiniPlayerProps> = ({
             type="button"
             onClick={onToggleRun}
             aria-label={timer.isRunning ? 'Pause study timer' : 'Resume study timer'}
-            className="w-9 h-9 rounded-full bg-[#4338CA] dark:bg-[#6366F1] text-white flex items-center justify-center cursor-pointer"
+            className="w-9 h-9 rounded-full bg-[#0284C7] hover:bg-[#0369A1] dark:bg-[#38BDF8] dark:hover:bg-[#7DD3FC] text-white dark:text-[#07131E] flex items-center justify-center cursor-pointer"
           >
             {timer.isRunning ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
           </button>
@@ -364,7 +364,7 @@ export const TimerMiniPlayer: React.FC<TimerMiniPlayerProps> = ({
             type="button"
             onClick={onRequestStop}
             aria-label="Finish and log session"
-            className="w-9 h-9 rounded-full border border-[#E5E5E0]/90 dark:border-[#232834]/90 text-[#141413] dark:text-[#F3F4F6] flex items-center justify-center cursor-pointer"
+            className="w-9 h-9 rounded-full border border-[#DCE6F0]/90 dark:border-[#1E2C40]/90 text-[#0F172A] dark:text-[#F1F5F9] flex items-center justify-center cursor-pointer"
           >
             <Square className="w-3.5 h-3.5" />
           </button>
@@ -375,8 +375,8 @@ export const TimerMiniPlayer: React.FC<TimerMiniPlayerProps> = ({
               aria-label={isPipOpen ? 'Close PiP' : 'Open PiP'}
               className={`w-9 h-9 rounded-full flex items-center justify-center cursor-pointer ${
                 isPipOpen
-                  ? 'bg-[#4338CA]/15 dark:bg-[#6366F1]/25 text-[#4338CA] dark:text-[#A5B4FC]'
-                  : 'text-[#5A5A55] dark:text-[#9CA3AF]'
+                  ? 'bg-[#0EA5E9]/15 dark:bg-[#38BDF8]/20 text-[#0284C7] dark:text-[#7DD3FC]'
+                  : 'text-[#475569] dark:text-[#94A3B8]'
               }`}
             >
               <PictureInPicture2 className="w-3.5 h-3.5" />

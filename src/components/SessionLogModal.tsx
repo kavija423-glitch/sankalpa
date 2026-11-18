@@ -37,13 +37,13 @@ export const SessionLogModal: React.FC<SessionLogModalProps> = ({
       aria-modal="true"
       aria-labelledby="log-session-title"
     >
-      <div className="w-full max-w-md rounded-2xl bg-white dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834] p-6">
+      <div className="w-full max-w-md rounded-2xl bg-white dark:bg-[#0F1724] border border-[#DCE6F0] dark:border-[#1E2C40] p-6">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h2 id="log-session-title" className="font-display text-lg font-semibold text-[#141413] dark:text-[#F3F4F6]">
+            <h2 id="log-session-title" className="font-display text-lg font-semibold text-[#0F172A] dark:text-[#F1F5F9]">
               Log Study Session
             </h2>
-            <p className="text-xs text-[#5A5A55] dark:text-[#9CA3AF] mt-1 tabular-nums">
+            <p className="text-xs text-[#475569] dark:text-[#94A3B8] mt-1 tabular-nums">
               {subject.label} · {timer.title || 'Focused Study'} · {formatDurationLabel(durationMinutes)}
             </p>
           </div>
@@ -51,14 +51,14 @@ export const SessionLogModal: React.FC<SessionLogModalProps> = ({
             type="button"
             onClick={onCancel}
             aria-label="Resume without logging"
-            className="p-2 rounded-lg text-[#5A5A55] dark:text-[#9CA3AF] hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
+            className="p-2 rounded-lg text-[#475569] dark:text-[#94A3B8] hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         <div className="mt-5">
-          <span className="block text-xs font-medium text-[#141413] dark:text-[#F3F4F6] mb-2">
+          <span className="block text-xs font-medium text-[#0F172A] dark:text-[#F1F5F9] mb-2">
             Focus Quality Rating
           </span>
           <div className="flex items-center gap-2">
@@ -71,7 +71,7 @@ export const SessionLogModal: React.FC<SessionLogModalProps> = ({
                 className={`w-10 h-10 rounded-lg border flex items-center justify-center transition-colors cursor-pointer ${
                   star <= rating
                     ? 'border-amber-400 bg-amber-50 dark:bg-amber-950/30 text-amber-500'
-                    : 'border-[#E5E5E0] dark:border-[#232834] text-[#9CA3AF]'
+                    : 'border-[#DCE6F0] dark:border-[#1E2C40] text-[#94A3B8]'
                 }`}
               >
                 <Star className={`w-4 h-4 ${star <= rating ? 'fill-current' : ''}`} />
@@ -83,7 +83,7 @@ export const SessionLogModal: React.FC<SessionLogModalProps> = ({
         <div className="mt-4">
           <label
             htmlFor="session-log-notes"
-            className="block text-xs font-medium text-[#141413] dark:text-[#F3F4F6] mb-1.5"
+            className="block text-xs font-medium text-[#0F172A] dark:text-[#F1F5F9] mb-1.5"
           >
             Session Notes & Takeaways
           </label>
@@ -93,7 +93,7 @@ export const SessionLogModal: React.FC<SessionLogModalProps> = ({
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Questions solved, concepts to revise, or blockers..."
-            className="w-full rounded-lg bg-[#F7F7F5] dark:bg-[#0B0D11] border border-[#E5E5E0] dark:border-[#232834] px-3 py-2 text-sm text-[#141413] dark:text-[#F3F4F6] focus:outline-none focus:ring-2 focus:ring-[#4338CA]"
+            className="w-full rounded-lg bg-[#F4F8FB] dark:bg-[#080E17] border border-[#DCE6F0] dark:border-[#1E2C40] px-3 py-2 text-sm text-[#0F172A] dark:text-[#F1F5F9] focus:outline-none focus:ring-2 focus:ring-[#0EA5E9]"
           />
         </div>
 
@@ -112,7 +112,7 @@ export const SessionLogModal: React.FC<SessionLogModalProps> = ({
             <button
               type="button"
               onClick={onCancel}
-              className="px-4 py-2 rounded-lg border border-[#E5E5E0] dark:border-[#232834] text-xs font-medium text-[#141413] dark:text-[#F3F4F6] cursor-pointer"
+              className="px-4 py-2 rounded-lg border border-[#DCE6F0] dark:border-[#1E2C40] text-xs font-medium text-[#0F172A] dark:text-[#F1F5F9] cursor-pointer"
             >
               Keep Running
             </button>
@@ -122,7 +122,7 @@ export const SessionLogModal: React.FC<SessionLogModalProps> = ({
                 onSave(rating, notes.trim());
                 setNotes('');
               }}
-              className="px-4 py-2 rounded-lg bg-[#4338CA] dark:bg-[#6366F1] text-white text-xs font-semibold hover:opacity-90 cursor-pointer"
+              className="px-4 py-2 rounded-lg bg-[#0284C7] hover:bg-[#0369A1] dark:bg-[#38BDF8] dark:hover:bg-[#7DD3FC] text-white dark:text-[#07131E] text-xs font-semibold hover:opacity-90 cursor-pointer"
             >
               Save Session
             </button>

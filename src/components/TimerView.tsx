@@ -119,33 +119,33 @@ export const TimerView: React.FC<TimerViewProps> = ({
 
   return (
     <div className="max-w-5xl mx-auto w-full px-4 sm:px-6 py-5 space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-[#E5E5E0] dark:border-[#232834] pb-4">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 border-b border-[#DCE6F0] dark:border-[#1E2C40] pb-4">
         <div>
-          <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-[#141413] dark:text-[#F3F4F6]">
+          <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-[#0F172A] dark:text-[#F1F5F9]">
             Study Timer
           </h1>
-          <p className="text-sm text-[#5A5A55] dark:text-[#9CA3AF] mt-1">
+          <p className="text-sm text-[#475569] dark:text-[#94A3B8] mt-1">
             Timestamp-accurate focus clock · Survives screen lock and tab switching
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <div className="text-sm text-[#5A5A55] dark:text-[#9CA3AF] tabular-nums">
-            Logged today: <strong className="text-[#141413] dark:text-[#F3F4F6] font-mono">{formatDurationLabel(totalTodayMinutes)}</strong>
+          <div className="text-sm text-[#475569] dark:text-[#94A3B8] tabular-nums">
+            Logged today: <strong className="text-[#0F172A] dark:text-[#F1F5F9] font-mono">{formatDurationLabel(totalTodayMinutes)}</strong>
           </div>
           <button
             type="button"
             onClick={onOpenLogSession}
             data-testid="timer-log-session-btn"
-            className="min-h-[38px] px-3.5 py-1.5 rounded-lg border border-[#E5E5E0] dark:border-[#232834] bg-white dark:bg-[#13161D] text-xs font-semibold text-[#141413] dark:text-[#F3F4F6] hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
+            className="min-h-[38px] px-3.5 py-1.5 rounded-lg border border-[#DCE6F0] dark:border-[#1E2C40] bg-white dark:bg-[#0F1724] text-xs font-semibold text-[#0F172A] dark:text-[#F1F5F9] hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
           >
-            <Clock className="w-3.5 h-3.5 text-[#4338CA] dark:text-[#818CF8]" />
+            <Clock className="w-3.5 h-3.5 text-[#0EA5E9] dark:text-[#38BDF8]" />
             <span>+ Log Session</span>
           </button>
         </div>
       </div>
 
       {/* Mode Segmented Selector */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-1 rounded-xl bg-[#ECECE7] dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834]">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-1 rounded-xl bg-[#E6EEF5] dark:bg-[#0F1724] border border-[#DCE6F0] dark:border-[#1E2C40]">
         {MODES.map((m) => {
           const active = timer.mode === m.id;
           return (
@@ -155,8 +155,8 @@ export const TimerView: React.FC<TimerViewProps> = ({
               onClick={() => handleSelectMode(m.id)}
               className={`px-3 py-2 rounded-lg text-left transition-colors cursor-pointer ${
                 active
-                  ? 'bg-white dark:bg-[#1F2430] text-[#141413] dark:text-[#F3F4F6] shadow-xs'
-                  : 'text-[#5A5A55] dark:text-[#9CA3AF] hover:text-[#141413] dark:hover:text-[#F3F4F6]'
+                  ? 'bg-white dark:bg-[#172233] text-[#0F172A] dark:text-[#F1F5F9] shadow-xs'
+                  : 'text-[#475569] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#F1F5F9]'
               }`}
             >
               <div className="text-xs font-semibold whitespace-nowrap">{m.label}</div>
@@ -168,7 +168,7 @@ export const TimerView: React.FC<TimerViewProps> = ({
 
       {/* Main Two-Column Timer Stage */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        <section className="lg:col-span-7 rounded-2xl bg-white dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834] p-6 sm:p-8 flex flex-col items-center">
+        <section className="lg:col-span-7 rounded-2xl bg-white dark:bg-[#0F1724] border border-[#DCE6F0] dark:border-[#1E2C40] p-6 sm:p-8 flex flex-col items-center">
           {/* Session Title & Subject Controls */}
           <div className="w-full flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 mb-6">
             <input
@@ -177,13 +177,13 @@ export const TimerView: React.FC<TimerViewProps> = ({
               onChange={(e) => onConfigureTimer({ title: e.target.value })}
               placeholder="What are you studying?"
               aria-label="Study session title"
-              className="flex-1 min-w-0 px-3.5 py-2.5 text-sm rounded-lg bg-[#F7F7F5] dark:bg-[#0B0D11] border border-[#E5E5E0] dark:border-[#232834] text-[#141413] dark:text-[#F3F4F6] focus:outline-none focus:ring-2 focus:ring-[#4338CA] dark:focus:ring-[#6366F1]"
+              className="flex-1 min-w-0 px-3.5 py-2.5 text-sm rounded-lg bg-[#F4F8FB] dark:bg-[#080E17] border border-[#DCE6F0] dark:border-[#1E2C40] text-[#0F172A] dark:text-[#F1F5F9] focus:outline-none focus:ring-2 focus:ring-[#0EA5E9] dark:focus:ring-[#38BDF8]"
             />
             <select
               value={timer.subject}
               onChange={(e) => onConfigureTimer({ subject: e.target.value as SubjectKey })}
               aria-label="Study session subject"
-              className="px-3 py-2.5 text-sm rounded-lg bg-[#F7F7F5] dark:bg-[#0B0D11] border border-[#E5E5E0] dark:border-[#232834] text-[#141413] dark:text-[#F3F4F6] cursor-pointer"
+              className="px-3 py-2.5 text-sm rounded-lg bg-[#F4F8FB] dark:bg-[#080E17] border border-[#DCE6F0] dark:border-[#1E2C40] text-[#0F172A] dark:text-[#F1F5F9] cursor-pointer"
             >
               {Object.values(subjects).map((sub) => (
                 <option key={sub.id} value={sub.id}>
@@ -209,8 +209,8 @@ export const TimerView: React.FC<TimerViewProps> = ({
                 }
                 className={`px-3 py-1.5 rounded-md font-medium cursor-pointer ${
                   timer.phase === 'focus'
-                    ? 'bg-[#141413] text-white dark:bg-[#F3F4F6] dark:text-[#141413]'
-                    : 'text-[#5A5A55] dark:text-[#9CA3AF] hover:bg-black/5 dark:hover:bg-white/5'
+                    ? 'bg-[#0F172A] text-white dark:bg-[#F1F5F9] dark:text-[#0F172A]'
+                    : 'text-[#475569] dark:text-[#94A3B8] hover:bg-black/5 dark:hover:bg-white/5'
                 }`}
               >
                 Focus ({timer.mode === 'pomodoro_25' ? '25m' : '50m'})
@@ -228,8 +228,8 @@ export const TimerView: React.FC<TimerViewProps> = ({
                 }
                 className={`px-3 py-1.5 rounded-md font-medium cursor-pointer ${
                   timer.phase === 'break'
-                    ? 'bg-[#141413] text-white dark:bg-[#F3F4F6] dark:text-[#141413]'
-                    : 'text-[#5A5A55] dark:text-[#9CA3AF] hover:bg-black/5 dark:hover:bg-white/5'
+                    ? 'bg-[#0F172A] text-white dark:bg-[#F1F5F9] dark:text-[#0F172A]'
+                    : 'text-[#475569] dark:text-[#94A3B8] hover:bg-black/5 dark:hover:bg-white/5'
                 }`}
               >
                 Break ({timer.mode === 'pomodoro_25' ? '5m' : '10m'})
@@ -246,7 +246,7 @@ export const TimerView: React.FC<TimerViewProps> = ({
                 r={ringRadius}
                 fill="none"
                 strokeWidth="8"
-                className="stroke-[#ECECE7] dark:stroke-[#1F2430]"
+                className="stroke-[#E6EEF5] dark:stroke-[#172233]"
               />
               <circle
                 cx="130"
@@ -262,16 +262,16 @@ export const TimerView: React.FC<TimerViewProps> = ({
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-4">
-              <span className="text-xs font-medium text-[#5A5A55] dark:text-[#9CA3AF]">
+              <span className="text-xs font-medium text-[#475569] dark:text-[#94A3B8]">
                 {activeSubject.label} · {timer.phase === 'break' ? 'Break' : timer.mode === 'flowtime' ? 'Elapsed' : 'Remaining'}
               </span>
               <div
                 data-testid="timer-clock-display"
-                className="font-mono tabular-nums text-5xl font-semibold tracking-tight text-[#141413] dark:text-[#F3F4F6] mt-1"
+                className="font-mono tabular-nums text-5xl font-semibold tracking-tight text-[#0F172A] dark:text-[#F1F5F9] mt-1"
               >
                 {formatClockTimer(displayMs)}
               </div>
-              <span className="text-xs text-[#5A5A55] dark:text-[#9CA3AF] mt-2">
+              <span className="text-xs text-[#475569] dark:text-[#94A3B8] mt-2">
                 {timer.isRunning ? 'Clock active' : elapsedMs > 0 ? 'Paused' : 'Ready'}
               </span>
             </div>
@@ -282,7 +282,7 @@ export const TimerView: React.FC<TimerViewProps> = ({
             <button
               type="button"
               onClick={onToggleRun}
-              className="min-h-[44px] px-6 py-2.5 rounded-xl bg-[#4338CA] hover:bg-[#3730A3] dark:bg-[#6366F1] dark:hover:bg-[#4F46E5] text-white text-sm font-semibold flex items-center gap-2 transition-colors cursor-pointer"
+              className="min-h-[44px] px-6 py-2.5 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] dark:bg-[#38BDF8] dark:hover:bg-[#7DD3FC] text-white dark:text-[#07131E] text-sm font-semibold flex items-center gap-2 transition-colors cursor-pointer"
             >
               {timer.isRunning ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
               <span>{timer.isRunning ? 'Pause' : elapsedMs > 0 ? 'Resume' : 'Start Focus'}</span>
@@ -292,7 +292,7 @@ export const TimerView: React.FC<TimerViewProps> = ({
               type="button"
               onClick={onRequestLogStop}
               disabled={!timer.isRunning && timer.accumulatedMs === 0}
-              className="min-h-[44px] px-4 py-2.5 rounded-xl border border-[#E5E5E0] dark:border-[#232834] text-[#141413] dark:text-[#F3F4F6] text-sm font-medium flex items-center gap-2 hover:bg-black/5 dark:hover:bg-white/5 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              className="min-h-[44px] px-4 py-2.5 rounded-xl border border-[#DCE6F0] dark:border-[#1E2C40] text-[#0F172A] dark:text-[#F1F5F9] text-sm font-medium flex items-center gap-2 hover:bg-black/5 dark:hover:bg-white/5 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
             >
               <Square className="w-4 h-4" />
               <span>Finish & Log</span>
@@ -302,7 +302,7 @@ export const TimerView: React.FC<TimerViewProps> = ({
               type="button"
               onClick={onReset}
               aria-label="Reset timer"
-              className="min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[#E5E5E0] dark:border-[#232834] text-[#5A5A55] dark:text-[#9CA3AF] hover:text-[#141413] dark:hover:text-[#F3F4F6] flex items-center gap-1.5 cursor-pointer"
+              className="min-h-[44px] px-3.5 py-2.5 rounded-xl border border-[#DCE6F0] dark:border-[#1E2C40] text-[#475569] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#F1F5F9] flex items-center gap-1.5 cursor-pointer"
             >
               <RotateCcw className="w-4 h-4" />
               <span className="text-sm">Reset</span>
@@ -312,22 +312,22 @@ export const TimerView: React.FC<TimerViewProps> = ({
 
         {/* Link Block / Task & Today's Session Log */}
         <section className="lg:col-span-5 space-y-5">
-          <div className="rounded-2xl bg-white dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834] p-5">
+          <div className="rounded-2xl bg-white dark:bg-[#0F1724] border border-[#DCE6F0] dark:border-[#1E2C40] p-5">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="font-display text-base font-semibold text-[#141413] dark:text-[#F3F4F6]">
+              <h2 className="font-display text-base font-semibold text-[#0F172A] dark:text-[#F1F5F9]">
                 Link Scheduled Block or Task
               </h2>
               <button
                 type="button"
                 onClick={() => setShowLinkPicker((v) => !v)}
-                className="text-xs font-medium text-[#4338CA] dark:text-[#818CF8] hover:underline cursor-pointer"
+                className="text-xs font-medium text-[#0EA5E9] dark:text-[#38BDF8] hover:underline cursor-pointer"
               >
                 {showLinkPicker ? 'Hide list' : 'Browse all'}
               </button>
             </div>
 
             {todayBlocks.length === 0 && pendingTasks.length === 0 ? (
-              <p className="text-xs text-[#5A5A55] dark:text-[#9CA3AF]">
+              <p className="text-xs text-[#475569] dark:text-[#94A3B8]">
                 No blocks scheduled today. Create a block in Calendar or add a task first.
               </p>
             ) : (
@@ -342,19 +342,19 @@ export const TimerView: React.FC<TimerViewProps> = ({
                       onClick={() => handleLinkBlock(blk)}
                       className={`w-full text-left px-3 py-2.5 rounded-lg border transition-colors flex items-center justify-between gap-2 cursor-pointer ${
                         isLinked
-                          ? 'border-[#4338CA] dark:border-[#6366F1] bg-indigo-50/60 dark:bg-indigo-950/30'
-                          : 'border-[#E5E5E0] dark:border-[#232834] hover:bg-black/3 dark:hover:bg-white/3'
+                          ? 'border-[#0EA5E9] dark:border-[#38BDF8] bg-sky-50/80 dark:bg-sky-950/30'
+                          : 'border-[#DCE6F0] dark:border-[#1E2C40] hover:bg-black/3 dark:hover:bg-white/3'
                       }`}
                     >
                       <div className="min-w-0">
-                        <div className="text-xs font-semibold text-[#141413] dark:text-[#F3F4F6] truncate">
+                        <div className="text-xs font-semibold text-[#0F172A] dark:text-[#F1F5F9] truncate">
                           {blk.title}
                         </div>
-                        <div className="text-[11px] text-[#5A5A55] dark:text-[#9CA3AF] tabular-nums">
+                        <div className="text-[11px] text-[#475569] dark:text-[#94A3B8] tabular-nums">
                           {sub.label} · {formatTime24(blk.startMinutes)} · {blk.durationMinutes}m
                         </div>
                       </div>
-                      <Clock className="w-3.5 h-3.5 text-[#5A5A55] dark:text-[#9CA3AF] shrink-0" />
+                      <Clock className="w-3.5 h-3.5 text-[#475569] dark:text-[#94A3B8] shrink-0" />
                     </button>
                   );
                 })}
@@ -367,17 +367,17 @@ export const TimerView: React.FC<TimerViewProps> = ({
                         key={tsk.id}
                         type="button"
                         onClick={() => handleLinkTask(tsk)}
-                        className="w-full text-left px-3 py-2 rounded-lg border border-[#E5E5E0] dark:border-[#232834] hover:bg-black/3 dark:hover:bg-white/3 flex items-center justify-between gap-2 cursor-pointer"
+                        className="w-full text-left px-3 py-2 rounded-lg border border-[#DCE6F0] dark:border-[#1E2C40] hover:bg-black/3 dark:hover:bg-white/3 flex items-center justify-between gap-2 cursor-pointer"
                       >
                         <div className="min-w-0">
-                          <div className="text-xs font-medium text-[#141413] dark:text-[#F3F4F6] truncate">
+                          <div className="text-xs font-medium text-[#0F172A] dark:text-[#F1F5F9] truncate">
                             Task: {tsk.title}
                           </div>
-                          <div className="text-[11px] text-[#5A5A55] dark:text-[#9CA3AF]">
+                          <div className="text-[11px] text-[#475569] dark:text-[#94A3B8]">
                             {sub.label} · {tsk.durationMinutes}m
                           </div>
                         </div>
-                        <CheckCircle2 className="w-3.5 h-3.5 text-[#5A5A55] dark:text-[#9CA3AF] shrink-0" />
+                        <CheckCircle2 className="w-3.5 h-3.5 text-[#475569] dark:text-[#94A3B8] shrink-0" />
                       </button>
                     );
                   })}
@@ -386,16 +386,16 @@ export const TimerView: React.FC<TimerViewProps> = ({
           </div>
 
           {/* Today's Completed Sessions */}
-          <div className="rounded-2xl bg-white dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834] p-5">
-            <h2 className="font-display text-base font-semibold text-[#141413] dark:text-[#F3F4F6] mb-3">
+          <div className="rounded-2xl bg-white dark:bg-[#0F1724] border border-[#DCE6F0] dark:border-[#1E2C40] p-5">
+            <h2 className="font-display text-base font-semibold text-[#0F172A] dark:text-[#F1F5F9] mb-3">
               Today’s Logged Sessions
             </h2>
             {todaySessions.length === 0 ? (
-              <p className="text-xs text-[#5A5A55] dark:text-[#9CA3AF]">
+              <p className="text-xs text-[#475569] dark:text-[#94A3B8]">
                 No sessions logged yet today. Start the timer to record actual focus time on your calendar Ghost Overlay.
               </p>
             ) : (
-              <ul className="divide-y divide-[#E5E5E0] dark:divide-[#232834]">
+              <ul className="divide-y divide-[#DCE6F0] dark:divide-[#1E2C40]">
                 {todaySessions.map((ses) => {
                   const sub = subjects[ses.subject] ?? subjects.general;
                   const startDt = new Date(ses.startTimestamp);
@@ -410,7 +410,7 @@ export const TimerView: React.FC<TimerViewProps> = ({
                     >
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5 min-w-0">
-                          <span className="text-xs font-semibold text-[#141413] dark:text-[#F3F4F6] truncate">
+                          <span className="text-xs font-semibold text-[#0F172A] dark:text-[#F1F5F9] truncate">
                             {ses.title}
                           </span>
                           {ses.isManual && (
@@ -426,23 +426,23 @@ export const TimerView: React.FC<TimerViewProps> = ({
                             </span>
                           )}
                         </div>
-                        <div className="text-[11px] text-[#5A5A55] dark:text-[#9CA3AF] tabular-nums">
+                        <div className="text-[11px] text-[#475569] dark:text-[#94A3B8] tabular-nums">
                           {sub.label} · {formatTime24(startMins)} · {formatDurationLabel(ses.durationMinutes)}
                         </div>
                         {ses.notes && (
-                          <p className="text-[11px] text-[#5A5A55] dark:text-[#9CA3AF] mt-1 line-clamp-2">
+                          <p className="text-[11px] text-[#475569] dark:text-[#94A3B8] mt-1 line-clamp-2">
                             {ses.notes}
                           </p>
                         )}
                       </div>
                       {ses.isManual ? (
-                        <span className="text-[#5A5A55] dark:text-[#9CA3AF] shrink-0 pt-0.5" title="Edit manual session">
+                        <span className="text-[#475569] dark:text-[#94A3B8] shrink-0 pt-0.5" title="Edit manual session">
                           <Pencil className="w-3.5 h-3.5" />
                         </span>
                       ) : (
                         <div className="flex items-center gap-0.5 shrink-0 text-amber-500" aria-label={`Rated ${ses.rating} out of 5`}>
                           <Star className="w-3.5 h-3.5 fill-current" />
-                          <span className="font-mono text-xs tabular-nums text-[#141413] dark:text-[#F3F4F6]">
+                          <span className="font-mono text-xs tabular-nums text-[#0F172A] dark:text-[#F1F5F9]">
                             {ses.rating}
                           </span>
                         </div>

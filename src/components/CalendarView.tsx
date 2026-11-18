@@ -613,25 +613,25 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   return (
     <div className={`flex flex-col h-full min-h-0 w-full ${isSelectingSlot ? 'select-none' : ''}`}>
       {/* Top Calendar Toolbar & Exam Countdowns */}
-      <div className="shrink-0 px-4 sm:px-6 pt-4 pb-3 border-b border-[#E5E5E0] dark:border-[#232834] bg-[#F7F7F5] dark:bg-[#0B0D11] space-y-2.5">
+      <div className="shrink-0 px-4 sm:px-6 pt-4 pb-3 border-b border-[#DCE6F0] dark:border-[#1E2C40] bg-[#F4F8FB] dark:bg-[#080E17] space-y-2.5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
-            <h1 className="font-display text-xl sm:text-2xl font-bold tracking-tight text-[#141413] dark:text-[#F3F4F6] whitespace-nowrap">
+            <h1 className="font-display text-xl sm:text-2xl font-bold tracking-tight text-[#0F172A] dark:text-[#F1F5F9] whitespace-nowrap">
               24h Time-Block
             </h1>
-            <div className="flex items-center rounded-lg border border-[#E5E5E0] dark:border-[#232834] bg-white dark:bg-[#13161D]">
+            <div className="flex items-center rounded-lg border border-[#DCE6F0] dark:border-[#1E2C40] bg-white dark:bg-[#0F1724]">
               <button
                 type="button"
                 onClick={() => handleNavigate(-1)}
                 aria-label="Previous period"
-                className="p-2 text-[#5A5A55] dark:text-[#9CA3AF] hover:text-[#141413] dark:hover:text-[#F3F4F6] cursor-pointer"
+                className="p-2 text-[#475569] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#F1F5F9] cursor-pointer"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <button
                 type="button"
                 onClick={() => setAnchorDate(todayISO)}
-                className="px-2.5 py-1.5 text-xs font-semibold text-[#141413] dark:text-[#F3F4F6] hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer whitespace-nowrap"
+                className="px-2.5 py-1.5 text-xs font-semibold text-[#0F172A] dark:text-[#F1F5F9] hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer whitespace-nowrap"
               >
                 Today
               </button>
@@ -639,7 +639,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 type="button"
                 onClick={() => handleNavigate(1)}
                 aria-label="Next period"
-                className="p-2 text-[#5A5A55] dark:text-[#9CA3AF] hover:text-[#141413] dark:hover:text-[#F3F4F6] cursor-pointer"
+                className="p-2 text-[#475569] dark:text-[#94A3B8] hover:text-[#0F172A] dark:hover:text-[#F1F5F9] cursor-pointer"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
@@ -654,8 +654,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               aria-pressed={showGhostOverlay}
               className={`min-h-[38px] px-3 py-1.5 rounded-lg border text-xs font-medium flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer ${
                 showGhostOverlay
-                  ? 'border-[#4338CA] dark:border-[#6366F1] bg-indigo-50/70 dark:bg-indigo-950/40 text-[#4338CA] dark:text-[#A5B4FC]'
-                  : 'border-[#E5E5E0] dark:border-[#232834] bg-white dark:bg-[#13161D] text-[#5A5A55] dark:text-[#9CA3AF]'
+                  ? 'border-[#0EA5E9] dark:border-[#38BDF8] bg-sky-50/90 dark:bg-sky-950/40 text-[#0284C7] dark:text-[#7DD3FC]'
+                  : 'border-[#DCE6F0] dark:border-[#1E2C40] bg-white dark:bg-[#0F1724] text-[#475569] dark:text-[#94A3B8]'
               }`}
             >
               {showGhostOverlay ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
@@ -663,14 +663,14 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             </button>
 
             {/* Week / Day Switcher */}
-            <div className="flex items-center p-0.5 rounded-lg bg-[#ECECE7] dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834]">
+            <div className="flex items-center p-0.5 rounded-lg bg-[#E6EEF5] dark:bg-[#0F1724] border border-[#DCE6F0] dark:border-[#1E2C40]">
               <button
                 type="button"
                 onClick={() => setViewMode('day')}
                 className={`px-2.5 py-1 rounded-md text-xs font-medium cursor-pointer whitespace-nowrap ${
                   viewMode === 'day'
-                    ? 'bg-white dark:bg-[#1F2430] text-[#141413] dark:text-[#F3F4F6] shadow-xs'
-                    : 'text-[#5A5A55] dark:text-[#9CA3AF]'
+                    ? 'bg-white dark:bg-[#172233] text-[#0F172A] dark:text-[#F1F5F9] shadow-xs'
+                    : 'text-[#475569] dark:text-[#94A3B8]'
                 }`}
               >
                 Day
@@ -680,8 +680,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 onClick={() => setViewMode('week')}
                 className={`px-2.5 py-1 rounded-md text-xs font-medium cursor-pointer whitespace-nowrap ${
                   viewMode === 'week'
-                    ? 'bg-white dark:bg-[#1F2430] text-[#141413] dark:text-[#F3F4F6] shadow-xs'
-                    : 'text-[#5A5A55] dark:text-[#9CA3AF]'
+                    ? 'bg-white dark:bg-[#172233] text-[#0F172A] dark:text-[#F1F5F9] shadow-xs'
+                    : 'text-[#475569] dark:text-[#94A3B8]'
                 }`}
               >
                 Week
@@ -691,7 +691,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             <button
               type="button"
               onClick={() => setShowTaskDrawer((v) => !v)}
-              className="min-h-[38px] px-3 py-1.5 rounded-lg border border-[#E5E5E0] dark:border-[#232834] bg-white dark:bg-[#13161D] text-xs font-medium text-[#141413] dark:text-[#F3F4F6] hover:bg-black/5 dark:hover:bg-white/5 whitespace-nowrap shrink-0 cursor-pointer"
+              className="min-h-[38px] px-3 py-1.5 rounded-lg border border-[#DCE6F0] dark:border-[#1E2C40] bg-white dark:bg-[#0F1724] text-xs font-medium text-[#0F172A] dark:text-[#F1F5F9] hover:bg-black/5 dark:hover:bg-white/5 whitespace-nowrap shrink-0 cursor-pointer"
             >
               Queue ({unscheduledTasks.length})
             </button>
@@ -700,9 +700,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               type="button"
               onClick={onOpenLogSession}
               data-testid="calendar-log-session-btn"
-              className="min-h-[38px] px-3 py-1.5 rounded-lg border border-[#E5E5E0] dark:border-[#232834] bg-white dark:bg-[#13161D] text-xs font-semibold text-[#141413] dark:text-[#F3F4F6] hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer"
+              className="min-h-[38px] px-3 py-1.5 rounded-lg border border-[#DCE6F0] dark:border-[#1E2C40] bg-white dark:bg-[#0F1724] text-xs font-semibold text-[#0F172A] dark:text-[#F1F5F9] hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer"
             >
-              <Clock className="w-3.5 h-3.5 text-[#4338CA] dark:text-[#818CF8]" />
+              <Clock className="w-3.5 h-3.5 text-[#0EA5E9] dark:text-[#38BDF8]" />
               <span>+ Log Session</span>
             </button>
 
@@ -720,7 +720,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                   taskId: null,
                 })
               }
-              className="min-h-[38px] px-3.5 py-1.5 rounded-lg bg-[#4338CA] dark:bg-[#6366F1] text-white text-xs font-semibold flex items-center gap-1.5 hover:opacity-90 whitespace-nowrap shrink-0 cursor-pointer"
+              className="min-h-[38px] px-3.5 py-1.5 rounded-lg bg-[#0284C7] hover:bg-[#0369A1] dark:bg-[#38BDF8] dark:hover:bg-[#7DD3FC] text-white dark:text-[#07131E] text-xs font-semibold flex items-center gap-1.5 hover:opacity-90 whitespace-nowrap shrink-0 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>New Block</span>
@@ -730,21 +730,21 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
         {/* Exam Countdowns & Drag Hint */}
         {(examCountdowns.length > 0 || activeDrag) && (
-          <div className="flex items-center gap-x-4 overflow-x-auto no-scrollbar text-xs text-[#5A5A55] dark:text-[#9CA3AF] whitespace-nowrap">
+          <div className="flex items-center gap-x-4 overflow-x-auto no-scrollbar text-xs text-[#475569] dark:text-[#94A3B8] whitespace-nowrap">
             {examCountdowns.map((ex) => {
               const remaining = daysUntilISO(ex.date);
               return (
                 <div key={ex.id} className="flex items-center gap-1.5 tabular-nums shrink-0">
-                  <CalendarIcon className="w-3.5 h-3.5 text-[#4338CA] dark:text-[#818CF8]" />
-                  <span className="font-medium text-[#141413] dark:text-[#F3F4F6]">{ex.title}:</span>
-                  <span className="font-mono font-semibold text-[#4338CA] dark:text-[#A5B4FC]">
+                  <CalendarIcon className="w-3.5 h-3.5 text-[#0EA5E9] dark:text-[#38BDF8]" />
+                  <span className="font-medium text-[#0F172A] dark:text-[#F1F5F9]">{ex.title}:</span>
+                  <span className="font-mono font-semibold text-[#0284C7] dark:text-[#7DD3FC]">
                     {remaining >= 0 ? `${remaining}d left` : 'Completed'}
                   </span>
                 </div>
               );
             })}
             {activeDrag && dropPreview && (
-              <span className="font-mono font-semibold text-[#4338CA] dark:text-[#A5B4FC]">
+              <span className="font-mono font-semibold text-[#0284C7] dark:text-[#7DD3FC]">
                 Drop preview: {dropPreview.date} · {formatTime24(dropPreview.startMinutes)} –{' '}
                 {formatTime24(dropPreview.startMinutes + dropPreview.durationMinutes)}
               </span>
@@ -759,10 +759,10 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
         <div className="flex-1 min-w-0 min-h-0 flex flex-col">
           {/* Sticky Day Column Headers */}
           <div
-            className="shrink-0 grid border-b border-[#E5E5E0] dark:border-[#232834] bg-white dark:bg-[#13161D]"
+            className="shrink-0 grid border-b border-[#DCE6F0] dark:border-[#1E2C40] bg-white dark:bg-[#0F1724]"
             style={{ gridTemplateColumns: `56px repeat(${visibleDays.length}, minmax(0, 1fr))` }}
           >
-            <div className="py-2.5 text-center text-[10px] font-mono text-[#5A5A55] dark:text-[#9CA3AF] border-r border-[#E5E5E0] dark:border-[#232834]">
+            <div className="py-2.5 text-center text-[10px] font-mono text-[#475569] dark:text-[#94A3B8] border-r border-[#DCE6F0] dark:border-[#1E2C40]">
               24H
             </div>
             {visibleDays.map((iso) => {
@@ -773,18 +773,18 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                   key={iso}
                   type="button"
                   onClick={() => setAnchorDate(iso)}
-                  className={`py-2 px-2 text-center border-r last:border-r-0 border-[#E5E5E0] dark:border-[#232834] cursor-pointer ${
-                    isToday ? 'bg-indigo-50/70 dark:bg-indigo-950/30' : ''
+                  className={`py-2 px-2 text-center border-r last:border-r-0 border-[#DCE6F0] dark:border-[#1E2C40] cursor-pointer ${
+                    isToday ? 'bg-sky-50/80 dark:bg-sky-950/30' : ''
                   }`}
                 >
-                  <div className="text-[11px] font-medium text-[#5A5A55] dark:text-[#9CA3AF]">
+                  <div className="text-[11px] font-medium text-[#475569] dark:text-[#94A3B8]">
                     {weekday}
                   </div>
                   <div
                     className={`font-mono tabular-nums text-sm font-semibold mt-0.5 ${
                       isToday
-                        ? 'text-[#4338CA] dark:text-[#818CF8]'
-                        : 'text-[#141413] dark:text-[#F3F4F6]'
+                        ? 'text-[#0EA5E9] dark:text-[#38BDF8]'
+                        : 'text-[#0F172A] dark:text-[#F1F5F9]'
                     }`}
                   >
                     {dayNum} {viewMode === 'day' ? month : ''}
@@ -810,14 +810,14 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               }}
             >
               {/* Left Hour Gutter */}
-              <div className="relative border-r border-[#E5E5E0] dark:border-[#232834] bg-[#FAFAF8] dark:bg-[#0B0D11]">
+              <div className="relative border-r border-[#DCE6F0] dark:border-[#1E2C40] bg-[#FAFAF8] dark:bg-[#080E17]">
                 {HOURS.map((hour) => (
                   <div
                     key={hour}
                     style={{ height: `${HOUR_HEIGHT}px` }}
-                    className="relative border-b border-[#E5E5E0]/70 dark:border-[#232834]/70 pr-2 text-right"
+                    className="relative border-b border-[#DCE6F0]/70 dark:border-[#1E2C40]/70 pr-2 text-right"
                   >
-                    <span className="font-mono tabular-nums text-[10px] text-[#5A5A55] dark:text-[#9CA3AF] top-1 relative">
+                    <span className="font-mono tabular-nums text-[10px] text-[#475569] dark:text-[#94A3B8] top-1 relative">
                       {String(hour).padStart(2, '0')}:00
                     </span>
                   </div>
@@ -880,7 +880,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                     }}
                     onDrop={(e) => handleDropOnDay(e, iso)}
                     onPointerDown={(e) => handleColumnPointerDown(e, iso)}
-                    className="relative border-r last:border-r-0 border-[#E5E5E0] dark:border-[#232834] cursor-crosshair"
+                    className="relative border-r last:border-r-0 border-[#DCE6F0] dark:border-[#1E2C40] cursor-crosshair"
                   >
                     {/* Hour Background Cells with Off-Peak Shading */}
                     {HOURS.map((hour) => (
@@ -888,9 +888,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                         key={hour}
                         data-hour-cell="true"
                         style={{ height: `${HOUR_HEIGHT}px` }}
-                        className={`border-b border-[#E5E5E0]/60 dark:border-[#232834]/60 ${
+                        className={`border-b border-[#DCE6F0]/60 dark:border-[#1E2C40]/60 ${
                           isOffPeakHour(hour)
-                            ? 'bg-[#F0F0EC]/75 dark:bg-[#080A0E]/85'
+                            ? 'bg-[#EAF1F7]/75 dark:bg-[#080A0E]/85'
                             : 'bg-transparent'
                         }`}
                       />
@@ -915,11 +915,11 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                           top: `${(colDragSelection.startMinutes / 60) * HOUR_HEIGHT}px`,
                           height: `${Math.max(24, (colDragSelection.durationMinutes / 60) * HOUR_HEIGHT)}px`,
                         }}
-                        className="absolute left-[2%] right-[2%] z-30 rounded-lg border-2 border-[#4338CA] dark:border-[#6366F1] bg-indigo-500/20 dark:bg-indigo-400/25 px-1.5 py-1 pointer-events-none flex items-start shadow-sm backdrop-blur-[1px] overflow-hidden"
+                        className="absolute left-[2%] right-[2%] z-30 rounded-lg border-2 border-[#0EA5E9] dark:border-[#38BDF8] bg-sky-400/20 dark:bg-sky-400/25 px-1.5 py-1 pointer-events-none flex items-start shadow-sm backdrop-blur-[1px] overflow-hidden"
                       >
                         <span
                           data-testid="calendar-drag-select-badge"
-                          className="inline-flex items-center rounded-md bg-[#4338CA] dark:bg-[#6366F1] text-white px-1.5 py-0.5 text-[10px] font-mono tabular-nums font-semibold shadow-xs whitespace-nowrap max-w-full truncate"
+                          className="inline-flex items-center rounded-md bg-[#0284C7] hover:bg-[#0369A1] dark:bg-[#38BDF8] dark:hover:bg-[#7DD3FC] text-white dark:text-[#07131E] px-1.5 py-0.5 text-[10px] font-mono tabular-nums font-semibold shadow-xs whitespace-nowrap max-w-full truncate"
                         >
                           {formatTime24(colDragSelection.startMinutes)} –{' '}
                           {formatTime24(colDragSelection.endMinutes)} (
@@ -940,10 +940,10 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                         }}
                         className="absolute left-[2%] right-[2%] z-30 rounded-lg border-2 border-dashed px-2 py-1 pointer-events-none flex flex-col justify-between backdrop-blur-[1px]"
                       >
-                        <div className="text-[11px] font-semibold text-[#141413] dark:text-[#F3F4F6] truncate">
+                        <div className="text-[11px] font-semibold text-[#0F172A] dark:text-[#F1F5F9] truncate">
                           {colDropPreview.title}
                         </div>
-                        <div className="text-[10px] font-mono tabular-nums font-bold text-[#141413] dark:text-[#F3F4F6]">
+                        <div className="text-[10px] font-mono tabular-nums font-bold text-[#0F172A] dark:text-[#F1F5F9]">
                           {formatTime24(colDropPreview.startMinutes)} –{' '}
                           {formatTime24(colDropPreview.startMinutes + colDropPreview.durationMinutes)}
                         </div>
@@ -1063,7 +1063,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                               >
                                 <Check className="w-2.5 h-2.5" />
                               </span>
-                              <span className="text-[11px] font-semibold text-[#141413] dark:text-[#F3F4F6] truncate leading-tight">
+                              <span className="text-[11px] font-semibold text-[#0F172A] dark:text-[#F1F5F9] truncate leading-tight">
                                 {ses.title}
                               </span>
                             </div>
@@ -1079,7 +1079,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                             </span>
                           </div>
                           {height >= 36 && (
-                            <div className="text-[10px] font-mono tabular-nums text-[#5A5A55] dark:text-[#D1D5DB] truncate mt-0.5">
+                            <div className="text-[10px] font-mono tabular-nums text-[#475569] dark:text-[#D1D5DB] truncate mt-0.5">
                               {formatTime24(ms.startMinutes)} – {formatTime24(ms.startMinutes + exactDuration)} · {formatDurationLabel(exactDuration)}
                             </div>
                           )}
@@ -1177,14 +1177,14 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                                 }
                                 className={`w-3.5 h-3.5 rounded-xs border flex items-center justify-center shrink-0 cursor-pointer ${
                                   blk.completed
-                                    ? 'bg-[#141413] dark:bg-[#F3F4F6] border-transparent text-white dark:text-[#141413]'
+                                    ? 'bg-[#0F172A] dark:bg-[#F1F5F9] border-transparent text-white dark:text-[#0F172A]'
                                     : 'border-current/40 bg-white/70 dark:bg-black/30'
                                 }`}
                               >
                                 {blk.completed && <Check className="w-2.5 h-2.5" />}
                               </button>
                               <span
-                                className={`text-[11px] font-semibold text-[#141413] dark:text-[#F3F4F6] truncate leading-tight ${
+                                className={`text-[11px] font-semibold text-[#0F172A] dark:text-[#F1F5F9] truncate leading-tight ${
                                   blk.completed ? 'line-through' : ''
                                 }`}
                               >
@@ -1198,13 +1198,13 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                                 onStartTimerFromBlock(blk);
                               }}
                               aria-label={`Start timer for ${blk.title}`}
-                              className="opacity-80 hover:opacity-100 p-0.5 rounded bg-white/80 dark:bg-black/40 text-[#141413] dark:text-[#F3F4F6] shrink-0 cursor-pointer"
+                              className="opacity-80 hover:opacity-100 p-0.5 rounded bg-white/80 dark:bg-black/40 text-[#0F172A] dark:text-[#F1F5F9] shrink-0 cursor-pointer"
                             >
                               <Play className="w-2.5 h-2.5" />
                             </button>
                           </div>
                           {height >= 36 && (
-                            <div className="text-[10px] font-mono tabular-nums text-[#5A5A55] dark:text-[#D1D5DB] truncate mt-0.5">
+                            <div className="text-[10px] font-mono tabular-nums text-[#475569] dark:text-[#D1D5DB] truncate mt-0.5">
                               {formatTime24(blk.startMinutes)} – {formatTime24(blk.startMinutes + blk.durationMinutes)}
                             </div>
                           )}
@@ -1236,13 +1236,13 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
         {/* Unscheduled Tasks Drawer (Drag & Drop or Tap to Schedule) */}
         {showTaskDrawer && (
-          <aside className="w-72 sm:w-80 shrink-0 border-l border-[#E5E5E0] dark:border-[#232834] bg-[#F7F7F5] dark:bg-[#13161D] flex flex-col min-h-0">
-            <div className="p-4 border-b border-[#E5E5E0] dark:border-[#232834] flex items-center justify-between">
+          <aside className="w-72 sm:w-80 shrink-0 border-l border-[#DCE6F0] dark:border-[#1E2C40] bg-[#F4F8FB] dark:bg-[#0F1724] flex flex-col min-h-0">
+            <div className="p-4 border-b border-[#DCE6F0] dark:border-[#1E2C40] flex items-center justify-between">
               <div>
-                <h2 className="font-display text-sm font-semibold text-[#141413] dark:text-[#F3F4F6]">
+                <h2 className="font-display text-sm font-semibold text-[#0F172A] dark:text-[#F1F5F9]">
                   Task Backlog
                 </h2>
-                <p className="text-[11px] text-[#5A5A55] dark:text-[#9CA3AF]">
+                <p className="text-[11px] text-[#475569] dark:text-[#94A3B8]">
                   Drag onto grid for snapped preview
                 </p>
               </div>
@@ -1250,14 +1250,14 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 type="button"
                 onClick={() => setShowTaskDrawer(false)}
                 aria-label="Close task queue drawer"
-                className="p-1.5 rounded-lg text-[#5A5A55] dark:text-[#9CA3AF] hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
+                className="p-1.5 rounded-lg text-[#475569] dark:text-[#94A3B8] hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
             <div className="flex-1 min-h-0 overflow-y-auto ios-scroll p-3 space-y-2">
               {unscheduledTasks.length === 0 ? (
-                <p className="text-xs text-[#5A5A55] dark:text-[#9CA3AF] p-2">
+                <p className="text-xs text-[#475569] dark:text-[#94A3B8] p-2">
                   No unscheduled tasks. Add tasks in Smart Tasks or click any calendar slot to create a linked block + task.
                 </p>
               ) : (
@@ -1290,17 +1290,17 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                           durationMinutes: t.durationMinutes,
                         })
                       }
-                      className="rounded-xl bg-white dark:bg-[#0B0D11] border border-[#E5E5E0] dark:border-[#232834] p-3 space-y-2 cursor-grab active:cursor-grabbing select-none"
+                      className="rounded-xl bg-white dark:bg-[#080E17] border border-[#DCE6F0] dark:border-[#1E2C40] p-3 space-y-2 cursor-grab active:cursor-grabbing select-none"
                     >
                       <div className="flex items-start gap-2">
                         <span className="touch-none pt-0.5 shrink-0" title="Drag to calendar">
-                          <GripVertical className="w-3.5 h-3.5 text-[#9CA3AF]" />
+                          <GripVertical className="w-3.5 h-3.5 text-[#94A3B8]" />
                         </span>
                         <div className="min-w-0 flex-1">
-                          <div className="text-xs font-semibold text-[#141413] dark:text-[#F3F4F6] leading-snug">
+                          <div className="text-xs font-semibold text-[#0F172A] dark:text-[#F1F5F9] leading-snug">
                             {t.title}
                           </div>
-                          <div className="text-[11px] text-[#5A5A55] dark:text-[#9CA3AF] mt-0.5 tabular-nums">
+                          <div className="text-[11px] text-[#475569] dark:text-[#94A3B8] mt-0.5 tabular-nums">
                             <span style={{ color: sub.color }} className="font-medium">
                               {sub.label}
                             </span>{' '}
@@ -1311,7 +1311,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                       <button
                         type="button"
                         onClick={() => onScheduleTaskOnCalendar(t.id, anchorDate, 480)}
-                        className="w-full py-1.5 rounded-lg border border-[#E5E5E0] dark:border-[#232834] text-[11px] font-medium text-[#141413] dark:text-[#F3F4F6] hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
+                        className="w-full py-1.5 rounded-lg border border-[#DCE6F0] dark:border-[#1E2C40] text-[11px] font-medium text-[#0F172A] dark:text-[#F1F5F9] hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
                       >
                         Schedule on {anchorDate === todayISO ? 'Today' : anchorDate} (08:00)
                       </button>
@@ -1334,24 +1334,24 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
         >
           <form
             onSubmit={handleSaveModal}
-            className="w-full max-w-md rounded-2xl bg-white dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834] p-6 space-y-4"
+            className="w-full max-w-md rounded-2xl bg-white dark:bg-[#0F1724] border border-[#DCE6F0] dark:border-[#1E2C40] p-6 space-y-4"
           >
             <div className="flex items-center justify-between">
-              <h2 id="block-modal-title" className="font-display text-lg font-semibold text-[#141413] dark:text-[#F3F4F6]">
+              <h2 id="block-modal-title" className="font-display text-lg font-semibold text-[#0F172A] dark:text-[#F1F5F9]">
                 {editingBlock.id ? 'Edit Time Block' : 'Schedule Study Block'}
               </h2>
               <button
                 type="button"
                 onClick={closeModal}
                 aria-label="Close block modal"
-                className="p-2 rounded-lg text-[#5A5A55] dark:text-[#9CA3AF] hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
+                className="p-2 rounded-lg text-[#475569] dark:text-[#94A3B8] hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             <div>
-              <label htmlFor="blk-title" className="block text-xs font-medium text-[#141413] dark:text-[#F3F4F6] mb-1">
+              <label htmlFor="blk-title" className="block text-xs font-medium text-[#0F172A] dark:text-[#F1F5F9] mb-1">
                 Block Title (synced with linked task)
               </label>
               <input
@@ -1361,20 +1361,20 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 value={editingBlock.title}
                 onChange={(e) => setEditingBlock({ ...editingBlock, title: e.target.value })}
                 placeholder="e.g., 2024 Physics Essay Q6–Q8"
-                className="w-full rounded-lg bg-[#F7F7F5] dark:bg-[#0B0D11] border border-[#E5E5E0] dark:border-[#232834] px-3 py-2 text-sm text-[#141413] dark:text-[#F3F4F6]"
+                className="w-full rounded-lg bg-[#F4F8FB] dark:bg-[#080E17] border border-[#DCE6F0] dark:border-[#1E2C40] px-3 py-2 text-sm text-[#0F172A] dark:text-[#F1F5F9]"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label htmlFor="blk-subject" className="block text-xs font-medium text-[#141413] dark:text-[#F3F4F6] mb-1">
+                <label htmlFor="blk-subject" className="block text-xs font-medium text-[#0F172A] dark:text-[#F1F5F9] mb-1">
                   Subject
                 </label>
                 <select
                   id="blk-subject"
                   value={editingBlock.subject}
                   onChange={(e) => setEditingBlock({ ...editingBlock, subject: e.target.value as SubjectKey })}
-                  className="w-full rounded-lg bg-[#F7F7F5] dark:bg-[#0B0D11] border border-[#E5E5E0] dark:border-[#232834] px-3 py-2 text-sm text-[#141413] dark:text-[#F3F4F6]"
+                  className="w-full rounded-lg bg-[#F4F8FB] dark:bg-[#080E17] border border-[#DCE6F0] dark:border-[#1E2C40] px-3 py-2 text-sm text-[#0F172A] dark:text-[#F1F5F9]"
                 >
                   {Object.values(subjects).map((sub) => (
                     <option key={sub.id} value={sub.id}>
@@ -1384,7 +1384,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 </select>
               </div>
               <div>
-                <label htmlFor="blk-date" className="block text-xs font-medium text-[#141413] dark:text-[#F3F4F6] mb-1">
+                <label htmlFor="blk-date" className="block text-xs font-medium text-[#0F172A] dark:text-[#F1F5F9] mb-1">
                   Date
                 </label>
                 <input
@@ -1392,14 +1392,14 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                   type="date"
                   value={editingBlock.date}
                   onChange={(e) => setEditingBlock({ ...editingBlock, date: e.target.value })}
-                  className="w-full rounded-lg bg-[#F7F7F5] dark:bg-[#0B0D11] border border-[#E5E5E0] dark:border-[#232834] px-3 py-2 text-sm font-mono text-[#141413] dark:text-[#F3F4F6]"
+                  className="w-full rounded-lg bg-[#F4F8FB] dark:bg-[#080E17] border border-[#DCE6F0] dark:border-[#1E2C40] px-3 py-2 text-sm font-mono text-[#0F172A] dark:text-[#F1F5F9]"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label htmlFor="blk-start" className="block text-xs font-medium text-[#141413] dark:text-[#F3F4F6] mb-1">
+                <label htmlFor="blk-start" className="block text-xs font-medium text-[#0F172A] dark:text-[#F1F5F9] mb-1">
                   Start Time
                 </label>
                 <select
@@ -1414,7 +1414,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                       durationMinutes: nextDuration,
                     });
                   }}
-                  className="w-full rounded-lg bg-[#F7F7F5] dark:bg-[#0B0D11] border border-[#E5E5E0] dark:border-[#232834] px-3 py-2 text-sm font-mono text-[#141413] dark:text-[#F3F4F6]"
+                  className="w-full rounded-lg bg-[#F4F8FB] dark:bg-[#080E17] border border-[#DCE6F0] dark:border-[#1E2C40] px-3 py-2 text-sm font-mono text-[#0F172A] dark:text-[#F1F5F9]"
                 >
                   {Array.from({ length: 96 }, (_, i) => i * 15).map((m) => (
                     <option key={m} value={m}>
@@ -1424,7 +1424,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 </select>
               </div>
               <div>
-                <label htmlFor="blk-end" className="block text-xs font-medium text-[#141413] dark:text-[#F3F4F6] mb-1">
+                <label htmlFor="blk-end" className="block text-xs font-medium text-[#0F172A] dark:text-[#F1F5F9] mb-1">
                   End Time
                 </label>
                 <select
@@ -1438,7 +1438,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                     );
                     setEditingBlock({ ...editingBlock, durationMinutes: nextDuration });
                   }}
-                  className="w-full rounded-lg bg-[#F7F7F5] dark:bg-[#0B0D11] border border-[#E5E5E0] dark:border-[#232834] px-3 py-2 text-sm font-mono text-[#141413] dark:text-[#F3F4F6]"
+                  className="w-full rounded-lg bg-[#F4F8FB] dark:bg-[#080E17] border border-[#DCE6F0] dark:border-[#1E2C40] px-3 py-2 text-sm font-mono text-[#0F172A] dark:text-[#F1F5F9]"
                 >
                   {endTimeOptions.map((m) => (
                     <option key={m} value={m}>
@@ -1448,7 +1448,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 </select>
               </div>
               <div>
-                <label htmlFor="blk-duration" className="block text-xs font-medium text-[#141413] dark:text-[#F3F4F6] mb-1">
+                <label htmlFor="blk-duration" className="block text-xs font-medium text-[#0F172A] dark:text-[#F1F5F9] mb-1">
                   Duration
                 </label>
                 <select
@@ -1463,7 +1463,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                       ),
                     })
                   }
-                  className="w-full rounded-lg bg-[#F7F7F5] dark:bg-[#0B0D11] border border-[#E5E5E0] dark:border-[#232834] px-3 py-2 text-sm font-mono text-[#141413] dark:text-[#F3F4F6]"
+                  className="w-full rounded-lg bg-[#F4F8FB] dark:bg-[#080E17] border border-[#DCE6F0] dark:border-[#1E2C40] px-3 py-2 text-sm font-mono text-[#0F172A] dark:text-[#F1F5F9]"
                 >
                   {durationOptions.map((d) => (
                     <option key={d} value={d}>
@@ -1475,19 +1475,19 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             </div>
 
             {editingBlock.id && (
-              <label className="flex items-center gap-2 text-xs font-medium text-[#141413] dark:text-[#F3F4F6] cursor-pointer">
+              <label className="flex items-center gap-2 text-xs font-medium text-[#0F172A] dark:text-[#F1F5F9] cursor-pointer">
                 <input
                   type="checkbox"
                   checked={editingBlock.completed}
                   onChange={(e) => setEditingBlock({ ...editingBlock, completed: e.target.checked })}
-                  className="accent-[#4338CA]"
+                  className="accent-[#0284C7]"
                 />
                 <span>Mark block & linked task completed</span>
               </label>
             )}
 
             <div>
-              <label htmlFor="blk-notes" className="block text-xs font-medium text-[#141413] dark:text-[#F3F4F6] mb-1">
+              <label htmlFor="blk-notes" className="block text-xs font-medium text-[#0F172A] dark:text-[#F1F5F9] mb-1">
                 Notes
               </label>
               <textarea
@@ -1496,7 +1496,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 value={editingBlock.notes}
                 onChange={(e) => setEditingBlock({ ...editingBlock, notes: e.target.value })}
                 placeholder="Goals or specific questions..."
-                className="w-full rounded-lg bg-[#F7F7F5] dark:bg-[#0B0D11] border border-[#E5E5E0] dark:border-[#232834] px-3 py-2 text-sm text-[#141413] dark:text-[#F3F4F6]"
+                className="w-full rounded-lg bg-[#F4F8FB] dark:bg-[#080E17] border border-[#DCE6F0] dark:border-[#1E2C40] px-3 py-2 text-sm text-[#0F172A] dark:text-[#F1F5F9]"
               />
             </div>
 
@@ -1521,13 +1521,13 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 <button
                   type="button"
                   onClick={closeModal}
-                  className="px-4 py-2 rounded-lg border border-[#E5E5E0] dark:border-[#232834] text-xs font-medium text-[#141413] dark:text-[#F3F4F6] cursor-pointer"
+                  className="px-4 py-2 rounded-lg border border-[#DCE6F0] dark:border-[#1E2C40] text-xs font-medium text-[#0F172A] dark:text-[#F1F5F9] cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-lg bg-[#4338CA] dark:bg-[#6366F1] text-white text-xs font-semibold hover:opacity-90 cursor-pointer"
+                  className="px-4 py-2 rounded-lg bg-[#0284C7] hover:bg-[#0369A1] dark:bg-[#38BDF8] dark:hover:bg-[#7DD3FC] text-white dark:text-[#07131E] text-xs font-semibold hover:opacity-90 cursor-pointer"
                 >
                   {editingBlock.id ? 'Save Changes' : 'Add Block'}
                 </button>
@@ -1611,16 +1611,16 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             aria-modal="true"
             aria-labelledby="actual-group-modal-title"
           >
-            <div className="w-full max-w-lg rounded-2xl bg-white dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834] p-5 sm:p-6 space-y-4 shadow-xl">
+            <div className="w-full max-w-lg rounded-2xl bg-white dark:bg-[#0F1724] border border-[#DCE6F0] dark:border-[#1E2C40] p-5 sm:p-6 space-y-4 shadow-xl">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <h2
                     id="actual-group-modal-title"
-                    className="font-display text-lg font-semibold text-[#141413] dark:text-[#F3F4F6]"
+                    className="font-display text-lg font-semibold text-[#0F172A] dark:text-[#F1F5F9]"
                   >
                     Recorded Study Sessions
                   </h2>
-                  <p className="text-xs font-mono tabular-nums text-[#5A5A55] dark:text-[#9CA3AF] mt-0.5">
+                  <p className="text-xs font-mono tabular-nums text-[#475569] dark:text-[#94A3B8] mt-0.5">
                     {formatTime24(groupStartMin)} – {formatTime24(groupEndMin)} ·{' '}
                     {formatDurationLabel(totalDurationMins)} ({inspectedSessions.length}{' '}
                     {inspectedSessions.length === 1 ? 'session' : 'sessions'})
@@ -1634,7 +1634,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                     setConfirmDeleteSessionId(null);
                   }}
                   aria-label="Close recorded sessions modal"
-                  className="p-2 rounded-lg text-[#5A5A55] dark:text-[#9CA3AF] hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
+                  className="p-2 rounded-lg text-[#475569] dark:text-[#94A3B8] hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -1663,16 +1663,16 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                         key={ses.id}
                         onSubmit={handleSaveSessionEdit}
                         data-testid={`actual-session-edit-form-${ses.id}`}
-                        className="rounded-xl border border-[#4338CA]/40 dark:border-[#6366F1]/50 bg-[#F7F7F5] dark:bg-[#0B0D11] p-3.5 space-y-3"
+                        className="rounded-xl border border-[#0EA5E9]/40 dark:border-[#38BDF8]/50 bg-[#F4F8FB] dark:bg-[#080E17] p-3.5 space-y-3"
                       >
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-semibold text-[#141413] dark:text-[#F3F4F6]">
+                          <span className="text-xs font-semibold text-[#0F172A] dark:text-[#F1F5F9]">
                             Edit Recorded Session
                           </span>
                           <button
                             type="button"
                             onClick={() => setEditingActualSession(null)}
-                            className="text-xs text-[#5A5A55] dark:text-[#9CA3AF] hover:underline cursor-pointer"
+                            className="text-xs text-[#475569] dark:text-[#94A3B8] hover:underline cursor-pointer"
                           >
                             Cancel
                           </button>
@@ -1686,7 +1686,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                           <div>
-                            <label className="block text-[11px] font-medium text-[#5A5A55] dark:text-[#9CA3AF] mb-1">
+                            <label className="block text-[11px] font-medium text-[#475569] dark:text-[#94A3B8] mb-1">
                               Title
                             </label>
                             <input
@@ -1698,11 +1698,11 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                                   title: e.target.value,
                                 })
                               }
-                              className="w-full rounded-lg bg-white dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834] px-2.5 py-1.5 text-xs text-[#141413] dark:text-[#F3F4F6]"
+                              className="w-full rounded-lg bg-white dark:bg-[#0F1724] border border-[#DCE6F0] dark:border-[#1E2C40] px-2.5 py-1.5 text-xs text-[#0F172A] dark:text-[#F1F5F9]"
                             />
                           </div>
                           <div>
-                            <label className="block text-[11px] font-medium text-[#5A5A55] dark:text-[#9CA3AF] mb-1">
+                            <label className="block text-[11px] font-medium text-[#475569] dark:text-[#94A3B8] mb-1">
                               Subject
                             </label>
                             <select
@@ -1713,7 +1713,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                                   subject: e.target.value as SubjectKey,
                                 })
                               }
-                              className="w-full rounded-lg bg-white dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834] px-2.5 py-1.5 text-xs text-[#141413] dark:text-[#F3F4F6]"
+                              className="w-full rounded-lg bg-white dark:bg-[#0F1724] border border-[#DCE6F0] dark:border-[#1E2C40] px-2.5 py-1.5 text-xs text-[#0F172A] dark:text-[#F1F5F9]"
                             >
                               {Object.values(subjects).map((s) => (
                                 <option key={s.id} value={s.id}>
@@ -1726,7 +1726,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
                         <div className="grid grid-cols-3 gap-2">
                           <div>
-                            <label className="block text-[11px] font-medium text-[#5A5A55] dark:text-[#9CA3AF] mb-1">
+                            <label className="block text-[11px] font-medium text-[#475569] dark:text-[#94A3B8] mb-1">
                               Date
                             </label>
                             <input
@@ -1739,11 +1739,11 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                                   date: e.target.value,
                                 })
                               }
-                              className="w-full rounded-lg bg-white dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834] px-2 py-1.5 text-xs font-mono text-[#141413] dark:text-[#F3F4F6]"
+                              className="w-full rounded-lg bg-white dark:bg-[#0F1724] border border-[#DCE6F0] dark:border-[#1E2C40] px-2 py-1.5 text-xs font-mono text-[#0F172A] dark:text-[#F1F5F9]"
                             />
                           </div>
                           <div>
-                            <label className="block text-[11px] font-medium text-[#5A5A55] dark:text-[#9CA3AF] mb-1">
+                            <label className="block text-[11px] font-medium text-[#475569] dark:text-[#94A3B8] mb-1">
                               Start
                             </label>
                             <input
@@ -1755,11 +1755,11 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                                   startTime: e.target.value,
                                 })
                               }
-                              className="w-full rounded-lg bg-white dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834] px-2 py-1.5 text-xs font-mono text-[#141413] dark:text-[#F3F4F6]"
+                              className="w-full rounded-lg bg-white dark:bg-[#0F1724] border border-[#DCE6F0] dark:border-[#1E2C40] px-2 py-1.5 text-xs font-mono text-[#0F172A] dark:text-[#F1F5F9]"
                             />
                           </div>
                           <div>
-                            <label className="block text-[11px] font-medium text-[#5A5A55] dark:text-[#9CA3AF] mb-1">
+                            <label className="block text-[11px] font-medium text-[#475569] dark:text-[#94A3B8] mb-1">
                               End
                             </label>
                             <input
@@ -1771,13 +1771,13 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                                   endTime: e.target.value,
                                 })
                               }
-                              className="w-full rounded-lg bg-white dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834] px-2 py-1.5 text-xs font-mono text-[#141413] dark:text-[#F3F4F6]"
+                              className="w-full rounded-lg bg-white dark:bg-[#0F1724] border border-[#DCE6F0] dark:border-[#1E2C40] px-2 py-1.5 text-xs font-mono text-[#0F172A] dark:text-[#F1F5F9]"
                             />
                           </div>
                         </div>
 
                         <div>
-                          <label className="block text-[11px] font-medium text-[#5A5A55] dark:text-[#9CA3AF] mb-1">
+                          <label className="block text-[11px] font-medium text-[#475569] dark:text-[#94A3B8] mb-1">
                             Linked Task (optional)
                           </label>
                           <select
@@ -1788,7 +1788,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                                 taskId: e.target.value || null,
                               })
                             }
-                            className="w-full rounded-lg bg-white dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834] px-2.5 py-1.5 text-xs text-[#141413] dark:text-[#F3F4F6]"
+                            className="w-full rounded-lg bg-white dark:bg-[#0F1724] border border-[#DCE6F0] dark:border-[#1E2C40] px-2.5 py-1.5 text-xs text-[#0F172A] dark:text-[#F1F5F9]"
                           >
                             <option value="">No linked task</option>
                             {candidateTasks.map((t) => (
@@ -1800,7 +1800,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                         </div>
 
                         <div>
-                          <label className="block text-[11px] font-medium text-[#5A5A55] dark:text-[#9CA3AF] mb-1">
+                          <label className="block text-[11px] font-medium text-[#475569] dark:text-[#94A3B8] mb-1">
                             Notes
                           </label>
                           <textarea
@@ -1813,14 +1813,14 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                               })
                             }
                             placeholder="Session reflections or topics covered..."
-                            className="w-full rounded-lg bg-white dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834] px-2.5 py-1.5 text-xs text-[#141413] dark:text-[#F3F4F6]"
+                            className="w-full rounded-lg bg-white dark:bg-[#0F1724] border border-[#DCE6F0] dark:border-[#1E2C40] px-2.5 py-1.5 text-xs text-[#0F172A] dark:text-[#F1F5F9]"
                           />
                         </div>
 
                         <div className="flex justify-end gap-2">
                           <button
                             type="submit"
-                            className="px-3.5 py-1.5 rounded-lg bg-[#4338CA] dark:bg-[#6366F1] text-white text-xs font-semibold hover:opacity-90 cursor-pointer"
+                            className="px-3.5 py-1.5 rounded-lg bg-[#0284C7] hover:bg-[#0369A1] dark:bg-[#38BDF8] dark:hover:bg-[#7DD3FC] text-white dark:text-[#07131E] text-xs font-semibold hover:opacity-90 cursor-pointer"
                           >
                             Save Session
                           </button>
@@ -1833,7 +1833,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                     <div
                       key={ses.id}
                       data-testid={`actual-session-row-${ses.id}`}
-                      className="rounded-xl border border-[#E5E5E0] dark:border-[#232834] bg-[#F7F7F5]/80 dark:bg-[#0B0D11] p-3.5 space-y-1.5"
+                      className="rounded-xl border border-[#DCE6F0] dark:border-[#1E2C40] bg-[#F4F8FB]/80 dark:bg-[#080E17] p-3.5 space-y-1.5"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0 flex-1 space-y-1">
@@ -1852,21 +1852,21 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                               />
                               {sub.label}
                             </span>
-                            <span className="text-xs font-mono tabular-nums font-semibold text-[#141413] dark:text-[#F3F4F6]">
+                            <span className="text-xs font-mono tabular-nums font-semibold text-[#0F172A] dark:text-[#F1F5F9]">
                               {formatTime24(sMin)} – {formatTime24(eMin)} ·{' '}
                               {formatDurationLabel(ses.durationMinutes)}
                             </span>
                           </div>
-                          <div className="text-sm font-semibold text-[#141413] dark:text-[#F3F4F6] leading-snug">
+                          <div className="text-sm font-semibold text-[#0F172A] dark:text-[#F1F5F9] leading-snug">
                             {ses.title}
                           </div>
                           {linkedTask && (
-                            <div className="text-[11px] text-[#4338CA] dark:text-[#A5B4FC] font-medium">
+                            <div className="text-[11px] text-[#0284C7] dark:text-[#7DD3FC] font-medium">
                               Linked task: {linkedTask.title}
                             </div>
                           )}
                           {ses.notes && (
-                            <p className="text-xs text-[#5A5A55] dark:text-[#9CA3AF] whitespace-pre-wrap">
+                            <p className="text-xs text-[#475569] dark:text-[#94A3B8] whitespace-pre-wrap">
                               {ses.notes}
                             </p>
                           )}
@@ -1889,7 +1889,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                               <button
                                 type="button"
                                 onClick={() => setConfirmDeleteSessionId(null)}
-                                className="px-2 py-1 rounded-md border border-[#E5E5E0] dark:border-[#232834] text-[11px] text-[#5A5A55] dark:text-[#9CA3AF] cursor-pointer"
+                                className="px-2 py-1 rounded-md border border-[#DCE6F0] dark:border-[#1E2C40] text-[11px] text-[#475569] dark:text-[#94A3B8] cursor-pointer"
                               >
                                 Cancel
                               </button>
@@ -1900,7 +1900,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                                 type="button"
                                 onClick={() => startEditingSession(ses)}
                                 aria-label={`Edit session ${ses.title}`}
-                                className="p-1.5 rounded-lg text-[#5A5A55] dark:text-[#9CA3AF] hover:bg-black/5 dark:hover:bg-white/5 hover:text-[#141413] dark:hover:text-[#F3F4F6] cursor-pointer"
+                                className="p-1.5 rounded-lg text-[#475569] dark:text-[#94A3B8] hover:bg-black/5 dark:hover:bg-white/5 hover:text-[#0F172A] dark:hover:text-[#F1F5F9] cursor-pointer"
                               >
                                 <Pencil className="w-3.5 h-3.5" />
                               </button>
@@ -1908,7 +1908,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                                 type="button"
                                 onClick={() => setConfirmDeleteSessionId(ses.id)}
                                 aria-label={`Delete session ${ses.title}`}
-                                className="p-1.5 rounded-lg text-[#5A5A55] dark:text-[#9CA3AF] hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 dark:hover:text-red-400 cursor-pointer"
+                                className="p-1.5 rounded-lg text-[#475569] dark:text-[#94A3B8] hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 dark:hover:text-red-400 cursor-pointer"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
@@ -1929,7 +1929,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                     setEditingActualSession(null);
                     setConfirmDeleteSessionId(null);
                   }}
-                  className="px-4 py-2 rounded-lg border border-[#E5E5E0] dark:border-[#232834] text-xs font-medium text-[#141413] dark:text-[#F3F4F6] hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
+                  className="px-4 py-2 rounded-lg border border-[#DCE6F0] dark:border-[#1E2C40] text-xs font-medium text-[#0F172A] dark:text-[#F1F5F9] hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
                 >
                   Done
                 </button>

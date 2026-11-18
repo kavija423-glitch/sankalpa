@@ -109,12 +109,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
   return (
     <div className="max-w-4xl mx-auto w-full px-4 sm:px-6 py-5 space-y-6">
-      <div className="border-b border-[#E5E5E0] dark:border-[#232834] pb-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="border-b border-[#DCE6F0] dark:border-[#1E2C40] pb-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-[#141413] dark:text-[#F3F4F6]">
+          <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight text-[#0F172A] dark:text-[#F1F5F9]">
             Workspace Settings
           </h1>
-          <p className="text-sm text-[#5A5A55] dark:text-[#9CA3AF] mt-1">
+          <p className="text-sm text-[#475569] dark:text-[#94A3B8] mt-1">
             Appearance, subject palette, exam countdowns, JSON backups & optional Firebase sync
           </p>
         </div>
@@ -122,24 +122,24 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       </div>
 
       {/* Theme & Study Goal */}
-      <section className="rounded-2xl bg-white dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834] p-5 space-y-5">
-        <h2 className="font-display text-base font-semibold text-[#141413] dark:text-[#F3F4F6]">
+      <section className="rounded-2xl bg-white dark:bg-[#0F1724] border border-[#DCE6F0] dark:border-[#1E2C40] p-5 space-y-5">
+        <h2 className="font-display text-base font-semibold text-[#0F172A] dark:text-[#F1F5F9]">
           Appearance & Goals
         </h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <span className="block text-xs font-medium text-[#5A5A55] dark:text-[#9CA3AF] mb-2">
+            <span className="block text-xs font-medium text-[#475569] dark:text-[#94A3B8] mb-2">
               Theme
             </span>
-            <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-[#F7F7F5] dark:bg-[#0B0D11] border border-[#E5E5E0] dark:border-[#232834]">
+            <div className="grid grid-cols-2 gap-2 p-1 rounded-xl bg-[#F4F8FB] dark:bg-[#080E17] border border-[#DCE6F0] dark:border-[#1E2C40]">
               <button
                 type="button"
                 onClick={() => onUpdateSettings({ theme: 'light' })}
                 className={`py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer ${
                   settings.theme === 'light'
-                    ? 'bg-white text-[#141413] shadow-xs'
-                    : 'text-[#5A5A55] dark:text-[#9CA3AF]'
+                    ? 'bg-white text-[#0F172A] shadow-xs'
+                    : 'text-[#475569] dark:text-[#94A3B8]'
                 }`}
               >
                 <Sun className="w-3.5 h-3.5" /> Light
@@ -149,8 +149,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 onClick={() => onUpdateSettings({ theme: 'dark' })}
                 className={`py-2 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer ${
                   settings.theme === 'dark'
-                    ? 'bg-[#1F2430] text-[#F3F4F6] shadow-xs'
-                    : 'text-[#5A5A55] dark:text-[#9CA3AF]'
+                    ? 'bg-[#172233] text-[#F1F5F9] shadow-xs'
+                    : 'text-[#475569] dark:text-[#94A3B8]'
                 }`}
               >
                 <Moon className="w-3.5 h-3.5" /> Dark
@@ -161,7 +161,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <div>
             <label
               htmlFor="daily-goal-mins"
-              className="block text-xs font-medium text-[#5A5A55] dark:text-[#9CA3AF] mb-2"
+              className="block text-xs font-medium text-[#475569] dark:text-[#94A3B8] mb-2"
             >
               Daily Study Target (minutes)
             </label>
@@ -175,23 +175,23 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               onChange={(e) =>
                 onUpdateSettings({ dailyGoalMinutes: Math.max(30, Number(e.target.value) || 240) })
               }
-              className="w-full rounded-xl bg-[#F7F7F5] dark:bg-[#0B0D11] border border-[#E5E5E0] dark:border-[#232834] px-3.5 py-2.5 text-sm font-mono tabular-nums text-[#141413] dark:text-[#F3F4F6]"
+              className="w-full rounded-xl bg-[#F4F8FB] dark:bg-[#080E17] border border-[#DCE6F0] dark:border-[#1E2C40] px-3.5 py-2.5 text-sm font-mono tabular-nums text-[#0F172A] dark:text-[#F1F5F9]"
             />
           </div>
         </div>
 
         {/* Custom Subject Colors */}
-        <div className="pt-3 border-t border-[#E5E5E0] dark:border-[#232834]">
-          <span className="block text-xs font-medium text-[#5A5A55] dark:text-[#9CA3AF] mb-3">
+        <div className="pt-3 border-t border-[#DCE6F0] dark:border-[#1E2C40]">
+          <span className="block text-xs font-medium text-[#475569] dark:text-[#94A3B8] mb-3">
             Subject Accent Colors
           </span>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {Object.values(subjects).map((sub) => (
               <label
                 key={sub.id}
-                className="flex items-center justify-between rounded-xl border border-[#E5E5E0] dark:border-[#232834] px-3.5 py-2.5 cursor-pointer"
+                className="flex items-center justify-between rounded-xl border border-[#DCE6F0] dark:border-[#1E2C40] px-3.5 py-2.5 cursor-pointer"
               >
-                <span className="text-xs font-medium text-[#141413] dark:text-[#F3F4F6]">
+                <span className="text-xs font-medium text-[#0F172A] dark:text-[#F1F5F9]">
                   {sub.label}
                 </span>
                 <input
@@ -208,25 +208,25 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       </section>
 
       {/* Exam Countdowns */}
-      <section className="rounded-2xl bg-white dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834] p-5 space-y-4">
-        <h2 className="font-display text-base font-semibold text-[#141413] dark:text-[#F3F4F6]">
+      <section className="rounded-2xl bg-white dark:bg-[#0F1724] border border-[#DCE6F0] dark:border-[#1E2C40] p-5 space-y-4">
+        <h2 className="font-display text-base font-semibold text-[#0F172A] dark:text-[#F1F5F9]">
           Exam Countdowns
         </h2>
         <div className="space-y-2">
           {examCountdowns.map((ex) => (
             <div
               key={ex.id}
-              className="flex items-center justify-between rounded-xl border border-[#E5E5E0] dark:border-[#232834] px-3.5 py-2.5"
+              className="flex items-center justify-between rounded-xl border border-[#DCE6F0] dark:border-[#1E2C40] px-3.5 py-2.5"
             >
               <div>
-                <div className="text-xs font-semibold text-[#141413] dark:text-[#F3F4F6]">{ex.title}</div>
-                <div className="text-[11px] font-mono tabular-nums text-[#5A5A55] dark:text-[#9CA3AF]">{ex.date}</div>
+                <div className="text-xs font-semibold text-[#0F172A] dark:text-[#F1F5F9]">{ex.title}</div>
+                <div className="text-[11px] font-mono tabular-nums text-[#475569] dark:text-[#94A3B8]">{ex.date}</div>
               </div>
               <button
                 type="button"
                 onClick={() => onDeleteExamCountdown(ex.id)}
                 aria-label={`Delete countdown ${ex.title}`}
-                className="p-1.5 rounded-lg text-[#5A5A55] hover:text-red-600 cursor-pointer"
+                className="p-1.5 rounded-lg text-[#475569] hover:text-red-600 cursor-pointer"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -253,18 +253,18 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             onChange={(e) => setNewExamTitle(e.target.value)}
             placeholder="Exam name (e.g., Term Test / A/L Final)"
             aria-label="New exam countdown title"
-            className="flex-1 rounded-xl bg-[#F7F7F5] dark:bg-[#0B0D11] border border-[#E5E5E0] dark:border-[#232834] px-3 py-2 text-xs"
+            className="flex-1 rounded-xl bg-[#F4F8FB] dark:bg-[#080E17] border border-[#DCE6F0] dark:border-[#1E2C40] px-3 py-2 text-xs"
           />
           <input
             type="date"
             value={newExamDate}
             onChange={(e) => setNewExamDate(e.target.value)}
             aria-label="New exam countdown date"
-            className="rounded-xl bg-[#F7F7F5] dark:bg-[#0B0D11] border border-[#E5E5E0] dark:border-[#232834] px-3 py-2 text-xs font-mono"
+            className="rounded-xl bg-[#F4F8FB] dark:bg-[#080E17] border border-[#DCE6F0] dark:border-[#1E2C40] px-3 py-2 text-xs font-mono"
           />
           <button
             type="submit"
-            className="px-4 py-2 rounded-xl bg-[#141413] dark:bg-[#F3F4F6] text-white dark:text-[#141413] text-xs font-semibold flex items-center justify-center gap-1 cursor-pointer"
+            className="px-4 py-2 rounded-xl bg-[#0F172A] dark:bg-[#F1F5F9] text-white dark:text-[#0F172A] text-xs font-semibold flex items-center justify-center gap-1 cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" /> Add
           </button>
@@ -272,18 +272,18 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       </section>
 
       {/* Local JSON Backups */}
-      <section className="rounded-2xl bg-white dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834] p-5 space-y-3">
-        <h2 className="font-display text-base font-semibold text-[#141413] dark:text-[#F3F4F6]">
+      <section className="rounded-2xl bg-white dark:bg-[#0F1724] border border-[#DCE6F0] dark:border-[#1E2C40] p-5 space-y-3">
+        <h2 className="font-display text-base font-semibold text-[#0F172A] dark:text-[#F1F5F9]">
           Manual JSON Backups
         </h2>
-        <p className="text-xs text-[#5A5A55] dark:text-[#9CA3AF]">
+        <p className="text-xs text-[#475569] dark:text-[#94A3B8]">
           All data is saved immediately to your browser’s localStorage for 100% offline use. Export a JSON snapshot anytime.
         </p>
         <div className="flex flex-wrap gap-2.5 pt-1">
           <button
             type="button"
             onClick={onExportJson}
-            className="px-4 py-2 rounded-xl border border-[#E5E5E0] dark:border-[#232834] text-xs font-semibold text-[#141413] dark:text-[#F3F4F6] hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-2 cursor-pointer"
+            className="px-4 py-2 rounded-xl border border-[#DCE6F0] dark:border-[#1E2C40] text-xs font-semibold text-[#0F172A] dark:text-[#F1F5F9] hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-2 cursor-pointer"
           >
             <Download className="w-4 h-4" />
             <span>Export JSON Backup</span>
@@ -291,7 +291,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="px-4 py-2 rounded-xl border border-[#E5E5E0] dark:border-[#232834] text-xs font-semibold text-[#141413] dark:text-[#F3F4F6] hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-2 cursor-pointer"
+            className="px-4 py-2 rounded-xl border border-[#DCE6F0] dark:border-[#1E2C40] text-xs font-semibold text-[#0F172A] dark:text-[#F1F5F9] hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-2 cursor-pointer"
           >
             <Upload className="w-4 h-4" />
             <span>Import JSON Backup</span>
@@ -321,7 +321,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <button
                 type="button"
                 onClick={() => setConfirmReset(false)}
-                className="px-3 py-2 rounded-xl border border-[#E5E5E0] dark:border-[#232834] text-xs font-medium cursor-pointer"
+                className="px-3 py-2 rounded-xl border border-[#DCE6F0] dark:border-[#1E2C40] text-xs font-medium cursor-pointer"
               >
                 Cancel
               </button>
@@ -338,13 +338,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       </section>
 
       {/* Built-in Real-Time Firebase Cloud Sync */}
-      <section className="rounded-2xl bg-white dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834] p-5 space-y-4">
+      <section className="rounded-2xl bg-white dark:bg-[#0F1724] border border-[#DCE6F0] dark:border-[#1E2C40] p-5 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h2 className="font-display text-base font-semibold text-[#141413] dark:text-[#F3F4F6]">
+            <h2 className="font-display text-base font-semibold text-[#0F172A] dark:text-[#F1F5F9]">
               Cloud Firestore Sync
             </h2>
-            <p className="text-xs text-[#5A5A55] dark:text-[#9CA3AF] mt-0.5">
+            <p className="text-xs text-[#475569] dark:text-[#94A3B8] mt-0.5">
               Built-in real-time sync across devices with offline persistence & persistent sign-in.
             </p>
           </div>
@@ -358,8 +358,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </>
             ) : (
               <>
-                <CloudOff className="w-4 h-4 text-[#9CA3AF]" />
-                <span className="text-[#5A5A55] dark:text-[#9CA3AF]">
+                <CloudOff className="w-4 h-4 text-[#94A3B8]" />
+                <span className="text-[#475569] dark:text-[#94A3B8]">
                   {firebaseProjectId ? `Sign in to sync (${firebaseProjectId})` : 'Local-only mode'}
                 </span>
               </>
@@ -371,12 +371,12 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         {firebaseProjectId && (
           <div className="space-y-4">
             {firebaseUser ? (
-              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-[#F7F7F5] dark:bg-[#0B0D11] border border-[#E5E5E0] dark:border-[#232834] p-3.5">
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-[#F4F8FB] dark:bg-[#080E17] border border-[#DCE6F0] dark:border-[#1E2C40] p-3.5">
                 <div>
-                  <div className="text-xs font-semibold text-[#141413] dark:text-[#F3F4F6]">
+                  <div className="text-xs font-semibold text-[#0F172A] dark:text-[#F1F5F9]">
                     Signed in as {firebaseUser.email || firebaseUser.displayName || firebaseUser.uid}
                   </div>
-                  <div className="text-[11px] text-[#5A5A55] dark:text-[#9CA3AF]">
+                  <div className="text-[11px] text-[#475569] dark:text-[#94A3B8]">
                     Real-time Cloud Firestore listener active · Session stays signed in across reloads
                   </div>
                 </div>
@@ -384,14 +384,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   <button
                     type="button"
                     onClick={() => void onForceSyncNow()}
-                    className="px-3 py-1.5 rounded-lg border border-[#E5E5E0] dark:border-[#232834] text-xs font-medium flex items-center gap-1.5 cursor-pointer"
+                    className="px-3 py-1.5 rounded-lg border border-[#DCE6F0] dark:border-[#1E2C40] text-xs font-medium flex items-center gap-1.5 cursor-pointer"
                   >
                     <RefreshCw className="w-3.5 h-3.5" /> Sync Now
                   </button>
                   <button
                     type="button"
                     onClick={() => void onSignOutFirebase()}
-                    className="px-3 py-1.5 rounded-lg border border-[#E5E5E0] dark:border-[#232834] text-xs font-medium text-rose-600 dark:text-rose-400 flex items-center gap-1.5 cursor-pointer"
+                    className="px-3 py-1.5 rounded-lg border border-[#DCE6F0] dark:border-[#1E2C40] text-xs font-medium text-rose-600 dark:text-rose-400 flex items-center gap-1.5 cursor-pointer"
                   >
                     <LogOut className="w-3.5 h-3.5" /> Sign Out
                   </button>
@@ -403,11 +403,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                   <button
                     type="button"
                     onClick={() => void onSignInGoogle()}
-                    className="px-4 py-2 rounded-xl border border-[#E5E5E0] dark:border-[#232834] text-xs font-semibold text-[#141413] dark:text-[#F3F4F6] hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
+                    className="px-4 py-2 rounded-xl border border-[#DCE6F0] dark:border-[#1E2C40] text-xs font-semibold text-[#0F172A] dark:text-[#F1F5F9] hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
                   >
                     Continue with Google
                   </button>
-                  <span className="text-xs text-[#5A5A55] dark:text-[#9CA3AF]">or use Email & Password:</span>
+                  <span className="text-xs text-[#475569] dark:text-[#94A3B8]">or use Email & Password:</span>
                 </div>
 
                 <form onSubmit={(e) => void handleEmailAuth(e)} className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -418,7 +418,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Email address"
                     aria-label="Firebase account email"
-                    className="rounded-xl bg-[#F7F7F5] dark:bg-[#0B0D11] border border-[#E5E5E0] dark:border-[#232834] px-3 py-2 text-xs"
+                    className="rounded-xl bg-[#F4F8FB] dark:bg-[#080E17] border border-[#DCE6F0] dark:border-[#1E2C40] px-3 py-2 text-xs"
                   />
                   <input
                     type="password"
@@ -428,19 +428,19 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Password (min 6 chars)"
                     aria-label="Firebase account password"
-                    className="rounded-xl bg-[#F7F7F5] dark:bg-[#0B0D11] border border-[#E5E5E0] dark:border-[#232834] px-3 py-2 text-xs"
+                    className="rounded-xl bg-[#F4F8FB] dark:bg-[#080E17] border border-[#DCE6F0] dark:border-[#1E2C40] px-3 py-2 text-xs"
                   />
                   <div className="flex gap-2">
                     <button
                       type="submit"
-                      className="flex-1 px-3 py-2 rounded-xl bg-[#141413] dark:bg-[#F3F4F6] text-white dark:text-[#141413] text-xs font-semibold cursor-pointer"
+                      className="flex-1 px-3 py-2 rounded-xl bg-[#0F172A] dark:bg-[#F1F5F9] text-white dark:text-[#0F172A] text-xs font-semibold cursor-pointer"
                     >
                       {authMode === 'signin' ? 'Sign In' : 'Create Account'}
                     </button>
                     <button
                       type="button"
                       onClick={() => setAuthMode((m) => (m === 'signin' ? 'signup' : 'signin'))}
-                      className="px-2.5 py-2 rounded-xl border border-[#E5E5E0] dark:border-[#232834] text-[11px] font-medium cursor-pointer"
+                      className="px-2.5 py-2 rounded-xl border border-[#DCE6F0] dark:border-[#1E2C40] text-[11px] font-medium cursor-pointer"
                     >
                       {authMode === 'signin' ? 'Register' : 'Login'}
                     </button>
@@ -452,8 +452,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         )}
 
         {/* Advanced Custom Firebase Config */}
-        <details className="pt-3 border-t border-[#E5E5E0] dark:border-[#232834]">
-          <summary className="text-xs font-medium text-[#5A5A55] dark:text-[#9CA3AF] cursor-pointer select-none hover:text-[#141413] dark:hover:text-[#F3F4F6]">
+        <details className="pt-3 border-t border-[#DCE6F0] dark:border-[#1E2C40]">
+          <summary className="text-xs font-medium text-[#475569] dark:text-[#94A3B8] cursor-pointer select-none hover:text-[#0F172A] dark:hover:text-[#F1F5F9]">
             Advanced: Custom Firebase Web Config JSON
           </summary>
           <div className="mt-3 space-y-2.5">
@@ -466,13 +466,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               value={configDraft}
               onChange={(e) => setConfigDraft(e.target.value)}
               placeholder='{"apiKey": "...", "authDomain": "...", "projectId": "...", "appId": "..."}'
-              className="w-full rounded-xl bg-[#F7F7F5] dark:bg-[#0B0D11] border border-[#E5E5E0] dark:border-[#232834] px-3.5 py-2.5 text-xs font-mono text-[#141413] dark:text-[#F3F4F6]"
+              className="w-full rounded-xl bg-[#F4F8FB] dark:bg-[#080E17] border border-[#DCE6F0] dark:border-[#1E2C40] px-3.5 py-2.5 text-xs font-mono text-[#0F172A] dark:text-[#F1F5F9]"
             />
             <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
                 onClick={() => void handleConnect()}
-                className="px-4 py-2 rounded-xl bg-[#4338CA] dark:bg-[#6366F1] text-white text-xs font-semibold cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-[#0284C7] hover:bg-[#0369A1] dark:bg-[#38BDF8] dark:hover:bg-[#7DD3FC] text-white dark:text-[#07131E] text-xs font-semibold cursor-pointer"
               >
                 Apply Config
               </button>
@@ -485,7 +485,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     setStatusMessage('Restored built-in Sankalpa Firebase configuration.');
                   });
                 }}
-                className="px-4 py-2 rounded-xl border border-[#E5E5E0] dark:border-[#232834] text-xs font-medium cursor-pointer"
+                className="px-4 py-2 rounded-xl border border-[#DCE6F0] dark:border-[#1E2C40] text-xs font-medium cursor-pointer"
               >
                 Restore Built-in Config
               </button>
@@ -494,7 +494,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </details>
 
         {(statusMessage || syncError) && (
-          <p className="text-xs font-medium text-[#4338CA] dark:text-[#A5B4FC]">
+          <p className="text-xs font-medium text-[#0284C7] dark:text-[#7DD3FC]">
             {syncError || statusMessage}
           </p>
         )}

@@ -23,7 +23,18 @@ export function loadAppState(): AppState {
     const hydrated: AppState = {
       ...fallback,
       ...parsed,
-      subjects: { ...fallback.subjects, ...(parsed.subjects ?? {}) },
+      subjects: {
+        ...fallback.subjects,
+        ...(parsed.subjects ?? {}),
+        general: {
+          ...fallback.subjects.general,
+          ...(parsed.subjects?.general ?? {}),
+          color:
+            parsed.subjects?.general?.color === '#6366F1'
+              ? '#06B6D4'
+              : parsed.subjects?.general?.color ?? fallback.subjects.general.color,
+        },
+      },
       settings: mergedSettings,
       activeTimer: { ...fallback.activeTimer, ...(parsed.activeTimer ?? {}) },
       tasks: rolloverRecurringTasks(Array.isArray(parsed.tasks) ? parsed.tasks : []),
@@ -70,7 +81,18 @@ export function parseImportedStateJson(jsonText: string): AppState {
   return reconcileTaskBlockLinks({
     ...fallback,
     ...parsed,
-    subjects: { ...fallback.subjects, ...(parsed.subjects ?? {}) },
+    subjects: {
+      ...fallback.subjects,
+      ...(parsed.subjects ?? {}),
+      general: {
+        ...fallback.subjects.general,
+        ...(parsed.subjects?.general ?? {}),
+        color:
+          parsed.subjects?.general?.color === '#6366F1'
+            ? '#06B6D4'
+            : parsed.subjects?.general?.color ?? fallback.subjects.general.color,
+      },
+    },
     settings: mergedSettings,
     activeTimer: { ...fallback.activeTimer, ...(parsed.activeTimer ?? {}) },
     syllabus: Array.isArray(parsed.syllabus) && parsed.syllabus.length > 0 ? parsed.syllabus : fallback.syllabus,
