@@ -45,6 +45,7 @@ export interface TaskItem {
     questionId: string;
     label: string;
   };
+  deletedAt?: number;
   updatedAt: number;
 }
 
@@ -56,7 +57,9 @@ export interface CalendarBlock {
   startMinutes: number; // 0..1425
   durationMinutes: number; // >= 15
   taskId: string | null;
+  completed?: boolean;
   notes: string;
+  deletedAt?: number;
   updatedAt: number;
 }
 

@@ -10,6 +10,7 @@ import {
   X,
   Calendar as CalendarIcon,
   GripVertical,
+  Check,
 } from 'lucide-react';
 import type {
   CalendarBlock,
@@ -45,6 +46,22 @@ interface CalendarViewProps {
   onStartTimerFromBlock: (block: CalendarBlock) => void;
 }
 
+interface ActiveDragPayload {
+  kind: 'task' | 'block';
+  id: string;
+  title: string;
+  subject: SubjectKey;
+  durationMinutes: number;
+}
+
+interface DropPreviewState {
+  date: string;
+  startMinutes: number;
+  durationMinutes: number;
+  title: string;
+  subject: SubjectKey;
+}
+
 const HOUR_HEIGHT = 52; // px per hour => 1248px total for 24h; 15m = 13px
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
@@ -68,6 +85,26 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   const [showGhostOverlay, setShowGhostOverlay] = useState(true);
   const [showTaskDrawer, setShowTaskDrawer] = useState(false);
 
+  // Drag & Drop Shadow Preview State (shared by HTML5 Drag + Touch/Pointer Drag)
+  const [activeDrag, setActiveDrag] = useState<ActiveDragPayload | null>(null);
+  const [dropPreview, setDropPreview] = useState<DropPreviewState | null>(null);
+  const activeDragRef = useRef<ActiveDragPayload | null>(null);
+  const dropPreviewRef = useRef<DropPreviewState | null>(null);
+
+  const setDragState = (drag: ActiveDragPayload | null, preview: DropPreviewState | null) => {
+    activeDragRef.current = drag;
+    dropPreviewRef.current = preview;
+    setActiveDrag(drag);
+    setDropPreview(preview);
+  };
+
+  // Block Resize State
+  const [resizingBlock, setResizingBlock] = useState<{
+    block: CalendarBlock;
+    startY: number;
+    initialDuration: number;
+  } | null>(null);
+
   // Modal state for creating or editing a block
   const [editingBlock, setEditingBlock] = useState<{
     id?: string;
@@ -76,6 +113,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     date: string;
     startMinutes: number;
     durationMinutes: number;
+    completed: boolean;
     notes: string;
     taskId: string | null;
   } | null>(null);
@@ -96,8 +134,10 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     return getWeekDaysISO(anchorDate);
   }, [anchorDate, viewMode]);
 
+  const activeBlocks = useMemo(() => blocks.filter((b) => !b.deletedAt), [blocks]);
+
   const unscheduledTasks = useMemo(
-    () => tasks.filter((t) => !t.completed && !t.scheduledBlockId),
+    () => tasks.filter((t) => !t.deletedAt && !t.completed && !t.scheduledBlockId),
     [tasks]
   );
 
@@ -114,6 +154,96 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     return () => window.clearInterval(id);
   }, []);
 
+  // Touch / Pointer Drag Handler (enables smooth drag + shadow preview on iOS/mobile & touch)
+  const startPointerDrag = (
+    e: React.PointerEvent,
+    payload: ActiveDragPayload
+  ) => {
+    if (e.pointerType === 'mouse') {
+      // Mouse uses native HTML5 drag-and-drop cleanly; keep pointer for touch/pen
+      return;
+    }
+    e.preventDefault();
+    e.stopPropagation();
+    setDragState(payload, null);
+
+    const handleMove = (ev: PointerEvent) => {
+      const els = document.elementsFromPoint(ev.clientX, ev.clientY);
+      const colEl = els.find((el) => el instanceof HTMLElement && el.dataset.dayColumn) as
+        | HTMLElement
+        | undefined;
+      if (!colEl || !colEl.dataset.dayColumn) {
+        dropPreviewRef.current = null;
+        setDropPreview(null);
+        return;
+      }
+      const rect = colEl.getBoundingClientRect();
+      const offsetY = ev.clientY - rect.top;
+      const snapped = snapMinutes((offsetY / HOUR_HEIGHT) * 60);
+      const durationMinutes = clampBlockDuration(snapped, payload.durationMinutes);
+      const nextPreview: DropPreviewState = {
+        date: colEl.dataset.dayColumn,
+        startMinutes: snapped,
+        durationMinutes,
+        title: payload.title,
+        subject: payload.subject,
+      };
+      dropPreviewRef.current = nextPreview;
+      setDropPreview(nextPreview);
+    };
+
+    const handleUp = () => {
+      window.removeEventListener('pointermove', handleMove);
+      window.removeEventListener('pointerup', handleUp);
+      window.removeEventListener('pointercancel', handleUp);
+
+      const finalPreview = dropPreviewRef.current;
+      const finalDrag = activeDragRef.current;
+      if (finalPreview && finalDrag) {
+        if (finalDrag.kind === 'task') {
+          onScheduleTaskOnCalendar(finalDrag.id, finalPreview.date, finalPreview.startMinutes);
+        } else {
+          onUpdateBlock(finalDrag.id, {
+            date: finalPreview.date,
+            startMinutes: finalPreview.startMinutes,
+          });
+        }
+      }
+      setDragState(null, null);
+    };
+
+    window.addEventListener('pointermove', handleMove, { passive: false });
+    window.addEventListener('pointerup', handleUp);
+    window.addEventListener('pointercancel', handleUp);
+  };
+
+  // Bottom-edge Block Resize Effect
+  useEffect(() => {
+    if (!resizingBlock) return;
+    const handleMove = (ev: PointerEvent) => {
+      const deltaY = ev.clientY - resizingBlock.startY;
+      const deltaMins = (deltaY / HOUR_HEIGHT) * 60;
+      const nextDuration = clampBlockDuration(
+        resizingBlock.block.startMinutes,
+        resizingBlock.initialDuration + deltaMins
+      );
+      if (nextDuration !== resizingBlock.block.durationMinutes) {
+        onUpdateBlock(resizingBlock.block.id, { durationMinutes: nextDuration });
+      }
+    };
+    const handleUp = () => {
+      setResizingBlock(null);
+    };
+    window.addEventListener('pointermove', handleMove);
+    window.addEventListener('pointerup', handleUp);
+    window.addEventListener('pointercancel', handleUp);
+    return () => {
+      window.removeEventListener('pointermove', handleMove);
+      window.removeEventListener('pointerup', handleUp);
+      window.removeEventListener('pointercancel', handleUp);
+    };
+  }, [resizingBlock, onUpdateBlock]);
+
   const handleNavigate = (dir: -1 | 1) => {
     setAnchorDate((prev) => addDaysISO(prev, dir * (viewMode === 'week' ? 7 : 1)));
   };
@@ -128,9 +258,41 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       date,
       startMinutes: snapped,
       durationMinutes: 60,
+      completed: false,
       notes: '',
       taskId: null,
     });
+  };
+
+  const handleDragOverDay = (e: React.DragEvent, date: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    const rect = e.currentTarget.getBoundingClientRect();
+    const offsetY = e.clientY - rect.top;
+    const snapped = snapMinutes((offsetY / HOUR_HEIGHT) * 60);
+
+    const drag = activeDragRef.current;
+    const fallbackDuration = drag?.durationMinutes ?? 60;
+    const durationMinutes = clampBlockDuration(snapped, fallbackDuration);
+
+    const nextPreview: DropPreviewState = {
+      date,
+      startMinutes: snapped,
+      durationMinutes,
+      title: drag?.title ?? 'Scheduled Study Block',
+      subject: drag?.subject ?? 'general',
+    };
+
+    const prev = dropPreviewRef.current;
+    if (
+      !prev ||
+      prev.date !== nextPreview.date ||
+      prev.startMinutes !== nextPreview.startMinutes ||
+      prev.durationMinutes !== nextPreview.durationMinutes
+    ) {
+      dropPreviewRef.current = nextPreview;
+      setDropPreview(nextPreview);
+    }
   };
 
   const handleDropOnDay = (e: React.DragEvent, date: string) => {
@@ -139,14 +301,19 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     const offsetY = e.clientY - rect.top;
     const snapped = snapMinutes((offsetY / HOUR_HEIGHT) * 60);
 
-    const taskId = e.dataTransfer.getData('text/sankalpa-task-id');
-    const blockId = e.dataTransfer.getData('text/sankalpa-block-id');
+    const taskId =
+      e.dataTransfer.getData('text/sankalpa-task-id') ||
+      (activeDragRef.current?.kind === 'task' ? activeDragRef.current.id : '');
+    const blockId =
+      e.dataTransfer.getData('text/sankalpa-block-id') ||
+      (activeDragRef.current?.kind === 'block' ? activeDragRef.current.id : '');
 
     if (taskId) {
       onScheduleTaskOnCalendar(taskId, date, snapped);
     } else if (blockId) {
       onUpdateBlock(blockId, { date, startMinutes: snapped });
     }
+    setDragState(null, null);
   };
 
   const formatDayHeader = (iso: string) => {
@@ -173,6 +340,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
         date: editingBlock.date,
         startMinutes,
         durationMinutes,
+        completed: editingBlock.completed,
         notes: editingBlock.notes,
       });
     } else {
@@ -182,6 +350,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
         date: editingBlock.date,
         startMinutes,
         durationMinutes,
+        completed: editingBlock.completed,
         taskId: editingBlock.taskId,
         notes: editingBlock.notes,
       });
@@ -192,7 +361,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   return (
     <div className="flex flex-col h-full min-h-0 w-full">
       {/* Top Calendar Toolbar & Exam Countdowns */}
-      <div className="shrink-0 px-4 sm:px-6 pt-4 pb-3 border-b border-[#E5E5E0] dark:border-[#232834] bg-[#F7F7F5] dark:bg-[#0B0D11] space-y-3">
+      <div className="shrink-0 px-4 sm:px-6 pt-4 pb-3 border-b border-[#E5E5E0] dark:border-[#232834] bg-[#F7F7F5] dark:bg-[#0B0D11] space-y-2.5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <h1 className="font-display text-xl sm:text-2xl font-bold tracking-tight text-[#141413] dark:text-[#F3F4F6] whitespace-nowrap">
@@ -231,7 +400,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               type="button"
               onClick={() => setShowGhostOverlay((v) => !v)}
               aria-pressed={showGhostOverlay}
-              className={`min-h-[38px] px-3 py-1.5 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+              className={`min-h-[38px] px-3 py-1.5 rounded-lg border text-xs font-medium flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer ${
                 showGhostOverlay
                   ? 'border-[#4338CA] dark:border-[#6366F1] bg-indigo-50/70 dark:bg-indigo-950/40 text-[#4338CA] dark:text-[#A5B4FC]'
                   : 'border-[#E5E5E0] dark:border-[#232834] bg-white dark:bg-[#13161D] text-[#5A5A55] dark:text-[#9CA3AF]'
@@ -284,6 +453,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                   date: anchorDate,
                   startMinutes: 480,
                   durationMinutes: 60,
+                  completed: false,
                   notes: '',
                   taskId: null,
                 })
@@ -296,8 +466,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           </div>
         </div>
 
-        {/* Exam Countdowns (Clean unboxed typographic metadata strip) */}
-        {examCountdowns.length > 0 && (
+        {/* Exam Countdowns & Drag Hint */}
+        {(examCountdowns.length > 0 || activeDrag) && (
           <div className="flex items-center gap-x-4 overflow-x-auto no-scrollbar text-xs text-[#5A5A55] dark:text-[#9CA3AF] whitespace-nowrap">
             {examCountdowns.map((ex) => {
               const remaining = daysUntilISO(ex.date);
@@ -311,9 +481,10 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 </div>
               );
             })}
-            {showGhostOverlay && (
-              <span className="ml-auto hidden lg:inline text-[11px] text-[#5A5A55] dark:text-[#9CA3AF] shrink-0">
-                Left = Planned · Right Dashed = Actual Timer
+            {activeDrag && dropPreview && (
+              <span className="font-mono font-semibold text-[#4338CA] dark:text-[#A5B4FC]">
+                Drop preview: {dropPreview.date} · {formatTime24(dropPreview.startMinutes)} –{' '}
+                {formatTime24(dropPreview.startMinutes + dropPreview.durationMinutes)}
               </span>
             )}
           </div>
@@ -325,7 +496,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
         {/* Scrollable 24h Calendar */}
         <div className="flex-1 min-w-0 min-h-0 flex flex-col">
           {/* Sticky Day Column Headers */}
-          <div className="shrink-0 grid border-b border-[#E5E5E0] dark:border-[#232834] bg-white dark:bg-[#13161D]"
+          <div
+            className="shrink-0 grid border-b border-[#E5E5E0] dark:border-[#232834] bg-white dark:bg-[#13161D]"
             style={{ gridTemplateColumns: `56px repeat(${visibleDays.length}, minmax(0, 1fr))` }}
           >
             <div className="py-2.5 text-center text-[10px] font-mono text-[#5A5A55] dark:text-[#9CA3AF] border-r border-[#E5E5E0] dark:border-[#232834]">
@@ -339,7 +511,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                   key={iso}
                   type="button"
                   onClick={() => setAnchorDate(iso)}
-                  className={`py-2 px-2 text-center border-r last:border-r-0 border-[#E5E5E0] dark:border-[#232834] transition-colors cursor-pointer ${
+                  className={`py-2 px-2 text-center border-r last:border-r-0 border-[#E5E5E0] dark:border-[#232834] cursor-pointer ${
                     isToday ? 'bg-indigo-50/70 dark:bg-indigo-950/30' : ''
                   }`}
                 >
@@ -390,7 +562,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
               {/* Day Columns */}
               {visibleDays.map((iso) => {
-                const dayBlocks = blocks.filter((b) => b.date === iso);
+                const dayBlocks = activeBlocks.filter((b) => b.date === iso);
                 const laidOutBlocks = computeOverlapLayout(dayBlocks);
 
                 const daySessions = showGhostOverlay
@@ -409,15 +581,27 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                   : [];
 
                 const isToday = iso === todayISO;
+                const colDropPreview = dropPreview && dropPreview.date === iso ? dropPreview : null;
 
                 return (
                   <div
                     key={iso}
                     data-day-column={iso}
-                    onDragOver={(e) => e.preventDefault()}
+                    onDragOver={(e) => handleDragOverDay(e, iso)}
+                    onDragLeave={(e) => {
+                      if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                        if (dropPreviewRef.current?.date === iso) {
+                          dropPreviewRef.current = null;
+                          setDropPreview(null);
+                        }
+                      }
+                    }}
                     onDrop={(e) => handleDropOnDay(e, iso)}
                     onClick={(e) => {
-                      if (e.target === e.currentTarget || (e.target as HTMLElement).dataset.hourCell === 'true') {
+                      if (
+                        e.target === e.currentTarget ||
+                        (e.target as HTMLElement).dataset.hourCell === 'true'
+                      ) {
                         const rect = e.currentTarget.getBoundingClientRect();
                         handleSlotClick(iso, e.clientY, rect.top);
                       }
@@ -446,6 +630,28 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                       >
                         <span className="w-2 h-2 rounded-full bg-rose-500 -ml-1" />
                         <div className="flex-1 h-[1.5px] bg-rose-500" />
+                      </div>
+                    )}
+
+                    {/* Real-Time Drop-Target Shadow Preview (15-min snapped) */}
+                    {colDropPreview && (
+                      <div
+                        data-testid="calendar-drop-preview"
+                        style={{
+                          top: `${(colDropPreview.startMinutes / 60) * HOUR_HEIGHT}px`,
+                          height: `${Math.max(24, (colDropPreview.durationMinutes / 60) * HOUR_HEIGHT)}px`,
+                          borderColor: (subjects[colDropPreview.subject] ?? subjects.general).color,
+                          backgroundColor: `${(subjects[colDropPreview.subject] ?? subjects.general).color}24`,
+                        }}
+                        className="absolute left-[2%] right-[2%] z-30 rounded-lg border-2 border-dashed px-2 py-1 pointer-events-none flex flex-col justify-between backdrop-blur-[1px]"
+                      >
+                        <div className="text-[11px] font-semibold text-[#141413] dark:text-[#F3F4F6] truncate">
+                          {colDropPreview.title}
+                        </div>
+                        <div className="text-[10px] font-mono tabular-nums font-bold text-[#141413] dark:text-[#F3F4F6]">
+                          {formatTime24(colDropPreview.startMinutes)} –{' '}
+                          {formatTime24(colDropPreview.startMinutes + colDropPreview.durationMinutes)}
+                        </div>
                       </div>
                     )}
 
@@ -479,15 +685,42 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                       const sub = subjects[blk.subject] ?? subjects.general;
                       const top = (blk.startMinutes / 60) * HOUR_HEIGHT;
                       const height = Math.max(24, (blk.durationMinutes / 60) * HOUR_HEIGHT);
-                      const widthPct = showGhostOverlay ? 55 / totalColumns : 96 / totalColumns;
+                      const hasGhostOverlap = daySessions.some(
+                        (gs) =>
+                          gs.startMinutes < blk.startMinutes + blk.durationMinutes &&
+                          gs.startMinutes + gs.durationMinutes > blk.startMinutes
+                      );
+                      const widthPct = hasGhostOverlap ? 55 / totalColumns : 96 / totalColumns;
                       const leftPct = 2 + column * widthPct;
+                      const isBeingDragged =
+                        activeDrag?.kind === 'block' && activeDrag.id === blk.id;
 
                       return (
                         <div
                           key={blk.id}
                           draggable
                           onDragStart={(e) => {
+                            const payload: ActiveDragPayload = {
+                              kind: 'block',
+                              id: blk.id,
+                              title: blk.title,
+                              subject: blk.subject,
+                              durationMinutes: blk.durationMinutes,
+                            };
                             e.dataTransfer.setData('text/sankalpa-block-id', blk.id);
+                            e.dataTransfer.effectAllowed = 'move';
+                            setDragState(payload, null);
+                          }}
+                          onDragEnd={() => setDragState(null, null)}
+                          onPointerDown={(e) => {
+                            if ((e.target as HTMLElement).closest('button')) return;
+                            startPointerDrag(e, {
+                              kind: 'block',
+                              id: blk.id,
+                              title: blk.title,
+                              subject: blk.subject,
+                              durationMinutes: blk.durationMinutes,
+                            });
                           }}
                           onClick={(e) => {
                             e.stopPropagation();
@@ -498,6 +731,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                               date: blk.date,
                               startMinutes: blk.startMinutes,
                               durationMinutes: blk.durationMinutes,
+                              completed: Boolean(blk.completed),
                               notes: blk.notes,
                               taskId: blk.taskId,
                             });
@@ -510,12 +744,39 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                             backgroundColor: `${sub.color}1F`,
                             borderColor: sub.color,
                           }}
-                          className="absolute z-10 rounded-lg border px-2 py-1 overflow-hidden cursor-pointer hover:brightness-95 transition-all group"
+                          className={`absolute z-10 rounded-lg border px-2 py-1 overflow-hidden cursor-pointer hover:brightness-95 group ${
+                            isBeingDragged ? 'opacity-40' : blk.completed ? 'opacity-65' : ''
+                          }`}
                         >
                           <div className="flex items-start justify-between gap-1">
-                            <span className="text-[11px] font-semibold text-[#141413] dark:text-[#F3F4F6] truncate leading-tight">
-                              {blk.title}
-                            </span>
+                            <div className="flex items-center gap-1 min-w-0">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  onUpdateBlock(blk.id, { completed: !blk.completed });
+                                }}
+                                aria-label={
+                                  blk.completed
+                                    ? `Mark block ${blk.title} incomplete`
+                                    : `Mark block ${blk.title} complete`
+                                }
+                                className={`w-3.5 h-3.5 rounded-xs border flex items-center justify-center shrink-0 cursor-pointer ${
+                                  blk.completed
+                                    ? 'bg-[#141413] dark:bg-[#F3F4F6] border-transparent text-white dark:text-[#141413]'
+                                    : 'border-current/40 bg-white/70 dark:bg-black/30'
+                                }`}
+                              >
+                                {blk.completed && <Check className="w-2.5 h-2.5" />}
+                              </button>
+                              <span
+                                className={`text-[11px] font-semibold text-[#141413] dark:text-[#F3F4F6] truncate leading-tight ${
+                                  blk.completed ? 'line-through' : ''
+                                }`}
+                              >
+                                {blk.title}
+                              </span>
+                            </div>
                             <button
                               type="button"
                               onClick={(e) => {
@@ -530,9 +791,25 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                           </div>
                           {height >= 36 && (
                             <div className="text-[10px] font-mono tabular-nums text-[#5A5A55] dark:text-[#D1D5DB] truncate mt-0.5">
-                              {formatTime24(blk.startMinutes)} · {formatDurationLabel(blk.durationMinutes)}
+                              {formatTime24(blk.startMinutes)} – {formatTime24(blk.startMinutes + blk.durationMinutes)}
                             </div>
                           )}
+
+                          {/* Bottom Resize Handle */}
+                          <div
+                            onPointerDown={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              setResizingBlock({
+                                block: blk,
+                                startY: e.clientY,
+                                initialDuration: blk.durationMinutes,
+                              });
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                            title="Drag bottom edge to resize"
+                            className="absolute bottom-0 left-0 right-0 h-2 cursor-ns-resize opacity-0 group-hover:opacity-100 bg-black/10 dark:bg-white/10"
+                          />
                         </div>
                       );
                     })}
@@ -549,10 +826,10 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             <div className="p-4 border-b border-[#E5E5E0] dark:border-[#232834] flex items-center justify-between">
               <div>
                 <h2 className="font-display text-sm font-semibold text-[#141413] dark:text-[#F3F4F6]">
-                  Unscheduled Tasks
+                  Task Backlog
                 </h2>
                 <p className="text-[11px] text-[#5A5A55] dark:text-[#9CA3AF]">
-                  Drag onto calendar or tap Schedule
+                  Drag onto grid for snapped preview
                 </p>
               </div>
               <button
@@ -567,7 +844,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
             <div className="flex-1 min-h-0 overflow-y-auto ios-scroll p-3 space-y-2">
               {unscheduledTasks.length === 0 ? (
                 <p className="text-xs text-[#5A5A55] dark:text-[#9CA3AF] p-2">
-                  All pending tasks are scheduled on your calendar.
+                  No unscheduled tasks. Add tasks in Smart Tasks or click any calendar slot to create a linked block + task.
                 </p>
               ) : (
                 unscheduledTasks.map((t) => {
@@ -576,13 +853,35 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                     <div
                       key={t.id}
                       draggable
+                      data-testid={`backlog-task-${t.id}`}
                       onDragStart={(e) => {
+                        const payload: ActiveDragPayload = {
+                          kind: 'task',
+                          id: t.id,
+                          title: t.title,
+                          subject: t.subject,
+                          durationMinutes: t.durationMinutes,
+                        };
                         e.dataTransfer.setData('text/sankalpa-task-id', t.id);
+                        e.dataTransfer.effectAllowed = 'move';
+                        setDragState(payload, null);
                       }}
-                      className="rounded-xl bg-white dark:bg-[#0B0D11] border border-[#E5E5E0] dark:border-[#232834] p-3 space-y-2 cursor-grab active:cursor-grabbing"
+                      onDragEnd={() => setDragState(null, null)}
+                      onPointerDown={(e) =>
+                        startPointerDrag(e, {
+                          kind: 'task',
+                          id: t.id,
+                          title: t.title,
+                          subject: t.subject,
+                          durationMinutes: t.durationMinutes,
+                        })
+                      }
+                      className="rounded-xl bg-white dark:bg-[#0B0D11] border border-[#E5E5E0] dark:border-[#232834] p-3 space-y-2 cursor-grab active:cursor-grabbing select-none"
                     >
                       <div className="flex items-start gap-2">
-                        <GripVertical className="w-3.5 h-3.5 text-[#9CA3AF] mt-0.5 shrink-0" />
+                        <span className="touch-none pt-0.5 shrink-0" title="Drag to calendar">
+                          <GripVertical className="w-3.5 h-3.5 text-[#9CA3AF]" />
+                        </span>
                         <div className="min-w-0 flex-1">
                           <div className="text-xs font-semibold text-[#141413] dark:text-[#F3F4F6] leading-snug">
                             {t.title}
@@ -639,7 +938,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
             <div>
               <label htmlFor="blk-title" className="block text-xs font-medium text-[#141413] dark:text-[#F3F4F6] mb-1">
-                Block Title
+                Block Title (synced with linked task)
               </label>
               <input
                 id="blk-title"
@@ -720,6 +1019,18 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 </select>
               </div>
             </div>
+
+            {editingBlock.id && (
+              <label className="flex items-center gap-2 text-xs font-medium text-[#141413] dark:text-[#F3F4F6] cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={editingBlock.completed}
+                  onChange={(e) => setEditingBlock({ ...editingBlock, completed: e.target.checked })}
+                  className="accent-[#4338CA]"
+                />
+                <span>Mark block & linked task completed</span>
+              </label>
+            )}
 
             <div>
               <label htmlFor="blk-notes" className="block text-xs font-medium text-[#141413] dark:text-[#F3F4F6] mb-1">

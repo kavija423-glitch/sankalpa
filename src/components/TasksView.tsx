@@ -51,6 +51,7 @@ export const TasksView: React.FC<TasksViewProps> = ({
 
   const filteredTasks = useMemo(() => {
     return tasks
+      .filter((t) => !t.deletedAt)
       .filter((t) => (subjectFilter === 'all' ? true : t.subject === subjectFilter))
       .filter((t) => (showCompleted ? true : !t.completed))
       .sort((a, b) => {
@@ -94,7 +95,7 @@ export const TasksView: React.FC<TasksViewProps> = ({
           </p>
         </div>
         <div className="text-xs text-[#5A5A55] dark:text-[#9CA3AF] tabular-nums">
-          {tasks.filter((t) => !t.completed).length} active · {tasks.filter((t) => t.completed).length} completed
+          {tasks.filter((t) => !t.deletedAt && !t.completed).length} active · {tasks.filter((t) => !t.deletedAt && t.completed).length} completed
         </div>
       </div>
 
@@ -334,9 +335,40 @@ export const TasksView: React.FC<TasksViewProps> = ({
                       )}
                     </div>
 
-                    {/* Expanded Subtasks & Notes */}
+                    {/* Expanded Subtasks, Metadata & Notes */}
                     {expanded && (
                       <div className="mt-3 pl-5 pt-3 border-t border-[#E5E5E0]/70 dark:border-[#232834]/70 space-y-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
+                          <input
+                            type="text"
+                            value={task.title}
+                            onChange={(e) => onUpdateTask(task.id, { title: e.target.value })}
+                            aria-label={`Edit title for ${task.title}`}
+                            className="sm:col-span-2 rounded-lg bg-[#F7F7F5] dark:bg-[#0B0D11] border border-[#E5E5E0] dark:border-[#232834] px-2.5 py-1.5 text-xs text-[#141413] dark:text-[#F3F4F6]"
+                          />
+                          <select
+                            value={task.durationMinutes}
+                            onChange={(e) =>
+                              onUpdateTask(task.id, { durationMinutes: Number(e.target.value) })
+                            }
+                            aria-label={`Edit duration for ${task.title}`}
+                            className="rounded-lg bg-[#F7F7F5] dark:bg-[#0B0D11] border border-[#E5E5E0] dark:border-[#232834] px-2.5 py-1.5 text-xs font-mono text-[#141413] dark:text-[#F3F4F6]"
+                          >
+                            {[15, 30, 45, 60, 75, 90, 120, 150, 180].map((m) => (
+                              <option key={m} value={m}>
+                                {m}m
+                              </option>
+                            ))}
+                          </select>
+                          <input
+                            type="date"
+                            value={task.dueDate}
+                            onChange={(e) => onUpdateTask(task.id, { dueDate: e.target.value })}
+                            aria-label={`Edit due date for ${task.title}`}
+                            className="rounded-lg bg-[#F7F7F5] dark:bg-[#0B0D11] border border-[#E5E5E0] dark:border-[#232834] px-2.5 py-1.5 text-xs font-mono text-[#141413] dark:text-[#F3F4F6]"
+                          />
+                        </div>
+
                         <div>
                           <label
                             htmlFor={`notes_${task.id}`}

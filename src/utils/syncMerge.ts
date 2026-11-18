@@ -1,4 +1,5 @@
 import type { AppState, SyllabusUnit, TaskItem } from '../types/app';
+import { reconcileTaskBlockLinks } from './bidirectionalSync';
 import { addDaysISO, toISODateLocal } from './nlpTaskParser';
 
 interface Timestamped {
@@ -46,7 +47,7 @@ export function mergeAppState(local: AppState, remote: AppState): AppState {
   const newerTimer =
     remote.lastModified > local.lastModified ? remote.activeTimer : local.activeTimer;
 
-  return {
+  const merged: AppState = {
     version: Math.max(local.version, remote.version),
     subjects: remote.lastModified > local.lastModified ? remote.subjects : local.subjects,
     tasks: mergeByTimestamp(local.tasks, remote.tasks),
@@ -64,6 +65,8 @@ export function mergeAppState(local: AppState, remote: AppState): AppState {
     activeTimer: newerTimer,
     lastModified: Math.max(local.lastModified, remote.lastModified),
   };
+
+  return reconcileTaskBlockLinks(merged);
 }
 
 export function nextOccurrenceISO(fromISO: string, rule: TaskItem['recurrence']): string {
@@ -88,7 +91,7 @@ export function rolloverRecurringTasks(tasks: TaskItem[], now: Date = new Date()
   const todayISO = toISODateLocal(now);
   const nowMs = now.getTime();
   return tasks.map((task) => {
-    if (task.recurrence === 'none' || task.completed) return task;
+    if (task.deletedAt || task.recurrence === 'none' || task.completed) return task;
     if (task.dueDate >= todayISO) return task;
 
     let nextDate = task.dueDate;

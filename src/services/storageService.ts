@@ -1,8 +1,9 @@
 import { createInitialAppState } from '../data/initialSeed';
 import type { AppState } from '../types/app';
+import { reconcileTaskBlockLinks } from '../utils/bidirectionalSync';
 import { rolloverRecurringTasks } from '../utils/syncMerge';
 
-const STORAGE_KEY = 'sankalpa_al_workspace_v1';
+const STORAGE_KEY = 'sankalpa_al_workspace_v2';
 
 export function loadAppState(): AppState {
   try {
@@ -20,14 +21,14 @@ export function loadAppState(): AppState {
       subjects: { ...fallback.subjects, ...(parsed.subjects ?? {}) },
       settings: { ...fallback.settings, ...(parsed.settings ?? {}) },
       activeTimer: { ...fallback.activeTimer, ...(parsed.activeTimer ?? {}) },
-      tasks: rolloverRecurringTasks(Array.isArray(parsed.tasks) ? parsed.tasks : fallback.tasks),
-      blocks: Array.isArray(parsed.blocks) ? parsed.blocks : fallback.blocks,
-      sessions: Array.isArray(parsed.sessions) ? parsed.sessions : fallback.sessions,
-      papers: Array.isArray(parsed.papers) ? parsed.papers : fallback.papers,
+      tasks: rolloverRecurringTasks(Array.isArray(parsed.tasks) ? parsed.tasks : []),
+      blocks: Array.isArray(parsed.blocks) ? parsed.blocks : [],
+      sessions: Array.isArray(parsed.sessions) ? parsed.sessions : [],
+      papers: Array.isArray(parsed.papers) ? parsed.papers : [],
       syllabus: Array.isArray(parsed.syllabus) && parsed.syllabus.length > 0 ? parsed.syllabus : fallback.syllabus,
-      examCountdowns: Array.isArray(parsed.examCountdowns) ? parsed.examCountdowns : fallback.examCountdowns,
+      examCountdowns: Array.isArray(parsed.examCountdowns) ? parsed.examCountdowns : [],
     };
-    return hydrated;
+    return reconcileTaskBlockLinks(hydrated);
   } catch {
     return createInitialAppState();
   }
@@ -41,15 +42,14 @@ export function saveAppState(state: AppState): void {
   }
 }
 
+export function resetAppState(): AppState {
+  const clean = createInitialAppState();
+  saveAppState(clean);
+  return clean;
+}
+
 export function exportStateAsJson(state: AppState): string {
-  const sanitized: AppState = {
-    ...state,
-    settings: {
-      ...state.settings,
-      firebaseConfigJson: state.settings.firebaseConfigJson,
-    },
-  };
-  return JSON.stringify(sanitized, null, 2);
+  return JSON.stringify(state, null, 2);
 }
 
 export function parseImportedStateJson(jsonText: string): AppState {
@@ -58,7 +58,7 @@ export function parseImportedStateJson(jsonText: string): AppState {
     throw new Error('Invalid Sankalpa backup JSON structure.');
   }
   const fallback = createInitialAppState();
-  return {
+  return reconcileTaskBlockLinks({
     ...fallback,
     ...parsed,
     subjects: { ...fallback.subjects, ...(parsed.subjects ?? {}) },
@@ -66,5 +66,5 @@ export function parseImportedStateJson(jsonText: string): AppState {
     activeTimer: { ...fallback.activeTimer, ...(parsed.activeTimer ?? {}) },
     syllabus: Array.isArray(parsed.syllabus) && parsed.syllabus.length > 0 ? parsed.syllabus : fallback.syllabus,
     lastModified: Date.now(),
-  };
+  });
 }

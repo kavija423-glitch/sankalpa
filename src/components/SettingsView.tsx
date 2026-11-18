@@ -29,6 +29,7 @@ interface SettingsViewProps {
   onDeleteExamCountdown: (id: string) => void;
   onExportJson: () => void;
   onImportJson: (jsonText: string) => void;
+  onResetAllData: () => void;
   onConnectFirebase: (configJson: string) => Promise<void>;
   onDisconnectFirebase: () => Promise<void>;
   onSignInGoogle: () => Promise<void>;
@@ -51,6 +52,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onDeleteExamCountdown,
   onExportJson,
   onImportJson,
+  onResetAllData,
   onConnectFirebase,
   onDisconnectFirebase,
   onSignInGoogle,
@@ -63,6 +65,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   const [password, setPassword] = useState('');
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [confirmReset, setConfirmReset] = useState(false);
   const [newExamTitle, setNewExamTitle] = useState('');
   const [newExamDate, setNewExamDate] = useState('2027-08-05');
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -292,6 +295,37 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             <Upload className="w-4 h-4" />
             <span>Import JSON Backup</span>
           </button>
+          {!confirmReset ? (
+            <button
+              type="button"
+              onClick={() => setConfirmReset(true)}
+              className="px-4 py-2 rounded-xl border border-rose-200 dark:border-rose-900/50 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 flex items-center gap-2 cursor-pointer"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span>Reset Workspace Data</span>
+            </button>
+          ) : (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  onResetAllData();
+                  setConfirmReset(false);
+                  setStatusMessage('Workspace reset to a clean empty state.');
+                }}
+                className="px-3.5 py-2 rounded-xl bg-rose-600 text-white text-xs font-semibold cursor-pointer"
+              >
+                Confirm Reset
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmReset(false)}
+                className="px-3 py-2 rounded-xl border border-[#E5E5E0] dark:border-[#232834] text-xs font-medium cursor-pointer"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
           <input
             ref={fileInputRef}
             type="file"

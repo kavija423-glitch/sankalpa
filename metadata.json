@@ -2,5 +2,7 @@
   "name": "Sankalpa",
   "description": "Offline-first PWA study workspace for Sri Lanka G.C.E. A/L Combined Mathematics, Physics, and ICT preparation.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }

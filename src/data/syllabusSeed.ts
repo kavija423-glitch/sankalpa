@@ -5,17 +5,17 @@ const mkSub = (
   code: string,
   titleEn: string,
   titleSi: string,
-  mastery: 'not_started' | 'learning' | 'revised' | 'mastered' = 'not_started',
-  confidence: number = 3,
-  revisionCount: number = 0
+  _mastery?: 'not_started' | 'learning' | 'revised' | 'mastered',
+  _confidence?: number,
+  _revisionCount?: number
 ) => ({
   id,
   code,
   titleEn,
   titleSi,
-  mastery,
-  confidence,
-  revisionCount,
+  mastery: 'not_started' as const,
+  confidence: 3,
+  revisionCount: 0,
   notes: '',
   updatedAt: 1700000000000,
 });

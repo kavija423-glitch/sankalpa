@@ -21,6 +21,7 @@ import {
   type Firestore,
 } from 'firebase/firestore';
 import type { AppState } from '../types/app';
+import { reconcileTaskBlockLinks } from '../utils/bidirectionalSync';
 
 export interface FirebaseConfigObject {
   apiKey: string;
@@ -39,6 +40,25 @@ export interface FirebaseHandle {
 }
 
 const APP_NAME = 'sankalpa-byo-sync';
+
+/**
+ * Recursively removes undefined values because Firestore rejects undefined properties.
+ */
+export function stripUndefined<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value.map((item) => stripUndefined(item)) as unknown as T;
+  }
+  if (value !== null && typeof value === 'object') {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      if (v !== undefined) {
+        out[k] = stripUndefined(v);
+      }
+    }
+    return out as T;
+  }
+  return value;
+}
 
 export function parseFirebaseConfigJson(rawJson: string): FirebaseConfigObject {
   const cleaned = rawJson.trim();
@@ -104,21 +124,22 @@ export async function signOutFirebase(auth: Auth): Promise<void> {
 
 export async function pushStateToFirestore(db: Firestore, uid: string, state: AppState): Promise<void> {
   const ref = doc(db, 'sankalpa_users', uid);
-  const payload: AppState = {
-    ...state,
+  const cleanState = reconcileTaskBlockLinks(state);
+  const payload = stripUndefined({
+    ...cleanState,
     settings: {
-      ...state.settings,
-      firebaseConfigJson: '', // Never store local config string inside remote doc unnecessarily
+      ...cleanState.settings,
+      firebaseConfigJson: '',
     },
-  };
-  await setDoc(ref, payload, { merge: true });
+  });
+  await setDoc(ref, payload);
 }
 
 export async function pullStateFromFirestore(db: Firestore, uid: string): Promise<AppState | null> {
   const ref = doc(db, 'sankalpa_users', uid);
   const snap = await getDoc(ref);
   if (!snap.exists()) return null;
-  return snap.data() as AppState;
+  return reconcileTaskBlockLinks(snap.data() as AppState);
 }
 
 export function subscribeRemoteState(
@@ -133,7 +154,7 @@ export function subscribeRemoteState(
     { includeMetadataChanges: false },
     (snap) => {
       if (snap.exists() && !snap.metadata.hasPendingWrites) {
-        onRemoteUpdate(snap.data() as AppState);
+        onRemoteUpdate(reconcileTaskBlockLinks(snap.data() as AppState));
       }
     },
     (err) => {

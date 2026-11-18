@@ -41,6 +41,7 @@ import {
   exportStateAsJson,
   loadAppState,
   parseImportedStateJson,
+  resetAppState,
   saveAppState,
 } from './services/storageService';
 import type {
@@ -58,9 +59,17 @@ import type {
   SyllabusSubtopic,
   TaskItem,
 } from './types/app';
-import { clampBlockDuration, snapMinutes } from './utils/calendarMath';
+import {
+  createBlockWithLinkedTask,
+  deleteBlockSynced,
+  deleteTaskSynced,
+  scheduleTaskToCalendar,
+  toggleTaskSynced,
+  updateBlockSynced,
+  updateTaskSynced,
+} from './utils/bidirectionalSync';
 import { parseNaturalLanguageTask, toISODateLocal } from './utils/nlpTaskParser';
-import { mergeAppState, nextOccurrenceISO } from './utils/syncMerge';
+import { mergeAppState } from './utils/syncMerge';
 
 const NAV_ITEMS: Array<{ id: NavTab; label: string; shortLabel: string; icon: React.ComponentType<{ className?: string }> }> = [
   { id: 'calendar', label: '24h Calendar', shortLabel: 'Calendar', icon: CalendarDays },
@@ -175,6 +184,8 @@ export default function App() {
   }, []);
 
   // Subscribe to remote Firestore doc when authenticated
+  const lastRemoteTimestampRef = useRef<number>(0);
+
   useEffect(() => {
     const handle = firebaseRef.current;
     if (!handle || !firebaseUser) return;
@@ -185,6 +196,7 @@ export default function App() {
         setSyncStatus('syncing');
         const remote = await pullStateFromFirestore(handle.db, firebaseUser.uid);
         if (remote && active) {
+          lastRemoteTimestampRef.current = remote.lastModified;
           setState((prev) => mergeAppState(prev, remote));
         } else if (active) {
           await pushStateToFirestore(handle.db, firebaseUser.uid, state);
@@ -202,6 +214,7 @@ export default function App() {
       handle.db,
       firebaseUser.uid,
       (remoteState) => {
+        lastRemoteTimestampRef.current = remoteState.lastModified;
         setState((prev) => mergeAppState(prev, remoteState));
       },
       (err) => {
@@ -221,9 +234,16 @@ export default function App() {
   useEffect(() => {
     const handle = firebaseRef.current;
     if (!handle || !firebaseUser) return;
+    if (state.lastModified === lastRemoteTimestampRef.current) return;
     const timer = window.setTimeout(() => {
-      void pushStateToFirestore(handle.db, firebaseUser.uid, state).catch(() => {});
-    }, 1200);
+      setSyncStatus('syncing');
+      void pushStateToFirestore(handle.db, firebaseUser.uid, state)
+        .then(() => setSyncStatus('connected'))
+        .catch((err) => {
+          setSyncStatus('error');
+          setSyncError(err instanceof Error ? err.message : 'Firestore write failed');
+        });
+    }, 800);
     return () => window.clearTimeout(timer);
   }, [state, firebaseUser]);
 
@@ -337,107 +357,32 @@ export default function App() {
   };
 
   const handleToggleTask = (taskId: string) => {
-    const now = Date.now();
-    mutateState((prev) => {
-      const target = prev.tasks.find((t) => t.id === taskId);
-      if (!target) return prev;
-      const nowCompleted = !target.completed;
-      const updatedTasks = prev.tasks.map((t) =>
-        t.id === taskId
-          ? {
-              ...t,
-              completed: nowCompleted,
-              completedAt: nowCompleted ? now : null,
-              updatedAt: now,
-            }
-          : t
-      );
-
-      // If completing a recurring task, automatically generate next occurrence
-      if (nowCompleted && target.recurrence !== 'none') {
-        const nextDue = nextOccurrenceISO(target.dueDate, target.recurrence);
-        const nextTask: TaskItem = {
-          ...target,
-          id: `tsk_${now}_${Math.random().toString(36).slice(2, 6)}`,
-          dueDate: nextDue,
-          completed: false,
-          completedAt: null,
-          scheduledBlockId: null,
-          subtasks: target.subtasks.map((s) => ({ ...s, done: false })),
-          updatedAt: now,
-        };
-        return { ...prev, tasks: [nextTask, ...updatedTasks] };
-      }
-
-      return { ...prev, tasks: updatedTasks };
-    });
+    setState((prev) => toggleTaskSynced(prev, taskId));
   };
 
   const handleUpdateTask = (taskId: string, patch: Partial<TaskItem>) => {
-    const now = Date.now();
-    mutateState((prev) => ({
-      ...prev,
-      tasks: prev.tasks.map((t) => (t.id === taskId ? { ...t, ...patch, updatedAt: now } : t)),
-    }));
+    setState((prev) => updateTaskSynced(prev, taskId, patch));
   };
 
   const handleDeleteTask = (taskId: string) => {
-    mutateState((prev) => ({
-      ...prev,
-      tasks: prev.tasks.filter((t) => t.id !== taskId),
-      blocks: prev.blocks.map((b) => (b.taskId === taskId ? { ...b, taskId: null } : b)),
-    }));
+    setState((prev) => deleteTaskSynced(prev, taskId));
   };
 
   // Calendar Blocks & Bidirectional Task Linking
   const handleCreateBlock = (blockInput: Omit<CalendarBlock, 'id' | 'updatedAt'>) => {
-    const now = Date.now();
-    const id = `blk_${now}_${Math.random().toString(36).slice(2, 6)}`;
-    const newBlock: CalendarBlock = { ...blockInput, id, updatedAt: now };
-    mutateState((prev) => ({
-      ...prev,
-      blocks: [...prev.blocks, newBlock],
-      tasks: blockInput.taskId
-        ? prev.tasks.map((t) =>
-            t.id === blockInput.taskId ? { ...t, scheduledBlockId: id, updatedAt: now } : t
-          )
-        : prev.tasks,
-    }));
+    setState((prev) => createBlockWithLinkedTask(prev, blockInput));
   };
 
   const handleUpdateBlock = (blockId: string, patch: Partial<CalendarBlock>) => {
-    const now = Date.now();
-    mutateState((prev) => ({
-      ...prev,
-      blocks: prev.blocks.map((b) => (b.id === blockId ? { ...b, ...patch, updatedAt: now } : b)),
-    }));
+    setState((prev) => updateBlockSynced(prev, blockId, patch));
   };
 
   const handleDeleteBlock = (blockId: string) => {
-    const now = Date.now();
-    mutateState((prev) => ({
-      ...prev,
-      blocks: prev.blocks.filter((b) => b.id !== blockId),
-      tasks: prev.tasks.map((t) =>
-        t.scheduledBlockId === blockId ? { ...t, scheduledBlockId: null, updatedAt: now } : t
-      ),
-    }));
+    setState((prev) => deleteBlockSynced(prev, blockId));
   };
 
   const handleScheduleTaskOnCalendar = (taskId: string, date: string, startMinutes: number) => {
-    const task = state.tasks.find((t) => t.id === taskId);
-    if (!task) return;
-    const snapped = snapMinutes(startMinutes);
-    const dur = clampBlockDuration(snapped, task.durationMinutes);
-    handleCreateBlock({
-      title: task.title,
-      subject: task.subject,
-      date,
-      startMinutes: snapped,
-      durationMinutes: dur,
-      taskId: task.id,
-      notes: task.notes,
-    });
+    setState((prev) => scheduleTaskToCalendar(prev, taskId, date, startMinutes));
   };
 
   // Launch Timer from Block or Task
@@ -764,8 +709,8 @@ export default function App() {
                 timer={state.activeTimer}
                 elapsedMs={elapsedMs}
                 subjects={state.subjects}
-                tasks={state.tasks}
-                blocks={state.blocks}
+                tasks={state.tasks.filter((t) => !t.deletedAt)}
+                blocks={state.blocks.filter((b) => !b.deletedAt)}
                 sessions={state.sessions}
                 onConfigureTimer={handleConfigureTimer}
                 onToggleRun={handleToggleTimerRun}
@@ -796,7 +741,7 @@ export default function App() {
             )}
             {activeTab === 'analytics' && (
               <AnalyticsView
-                blocks={state.blocks}
+                blocks={state.blocks.filter((b) => !b.deletedAt)}
                 sessions={state.sessions}
                 papers={state.papers}
                 subjects={state.subjects}
@@ -818,6 +763,7 @@ export default function App() {
                 onDeleteExamCountdown={handleDeleteExamCountdown}
                 onExportJson={handleExportJson}
                 onImportJson={handleImportJson}
+                onResetAllData={() => setState(resetAppState())}
                 onConnectFirebase={connectFirebaseWithJson}
                 onDisconnectFirebase={async () => {
                   await disconnectUserFirebase();
