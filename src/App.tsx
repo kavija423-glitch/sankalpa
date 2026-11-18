@@ -828,6 +828,7 @@ export default function App() {
                 blocks={state.blocks.filter((b) => !b.deletedAt)}
                 sessions={state.sessions}
                 papers={state.papers}
+                syllabus={state.syllabus}
                 subjects={state.subjects}
                 dailyGoalMinutes={state.settings.dailyGoalMinutes}
               />
