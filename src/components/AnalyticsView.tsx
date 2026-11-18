@@ -1279,143 +1279,94 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
         </div>
       </div>
 
-      {/* 4c. Weekday Study Rhythm & Focus Mode Mix */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Weekday Study Rhythm (Mon–Sun) */}
-        <section
-          data-testid="weekday-rhythm-section"
-          className="lg:col-span-6 rounded-2xl bg-white dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834] p-5 flex flex-col justify-between space-y-4"
-        >
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <h2 className="font-display text-base font-semibold text-[#141413] dark:text-[#F3F4F6]">
-                Day-of-Week Study Rhythm
-              </h2>
-              <p className="text-xs text-[#5A5A55] dark:text-[#9CA3AF]">
-                Total focus minutes by weekday (Mon–Sun)
-              </p>
-            </div>
-            {inspectedWeekday && inspectedWeekday.totalMinutes > 0 ? (
-              <span className="text-xs font-mono tabular-nums font-semibold text-[#4338CA] dark:text-[#A5B4FC]">
-                {inspectedWeekday.label}: {formatDurationLabel(inspectedWeekday.totalMinutes)} (avg{' '}
-                {formatDurationLabel(inspectedWeekday.avgMinutesPerActiveDay)})
-              </span>
-            ) : (
-              <span className="text-xs text-[#5A5A55] dark:text-[#9CA3AF]">No data yet</span>
-            )}
-          </div>
-
-          <div
-            className="h-40 flex items-end justify-between gap-2 pt-4 border-b border-[#E5E5E0] dark:border-[#232834] pb-2"
-            data-testid="weekday-rhythm-chart"
-          >
-            {weekdayRhythm.map((day) => {
-              const pct = Math.round((day.totalMinutes / maxWeekdayMinutes) * 100);
-              const isSelected = activeWeekdayIndex === day.weekdayIndex;
-              return (
-                <button
-                  key={day.label}
-                  type="button"
-                  onMouseEnter={() => setActiveWeekdayIndex(day.weekdayIndex)}
-                  onMouseLeave={() => setActiveWeekdayIndex(null)}
-                  onClick={() =>
-                    setActiveWeekdayIndex((prev) =>
-                      prev === day.weekdayIndex ? null : day.weekdayIndex
-                    )
-                  }
-                  aria-label={`${day.label}: ${formatDurationLabel(day.totalMinutes)}`}
-                  className="flex-1 h-full flex flex-col items-center justify-end gap-1.5 cursor-pointer group"
-                >
-                  <div className="w-full flex items-end justify-center h-28">
-                    <div
-                      style={{ height: `${Math.max(day.totalMinutes > 0 ? 8 : 3, pct)}%` }}
-                      className={`w-6 sm:w-8 rounded-t-md transition-all ${
-                        day.totalMinutes === 0
-                          ? 'bg-[#ECECE7] dark:bg-[#1F2430]'
-                          : day.isBest || isSelected
-                          ? 'bg-[#4338CA] dark:bg-[#6366F1]'
-                          : 'bg-[#A5B4FC] dark:bg-[#3730A3] group-hover:bg-[#6366F1]'
-                      }`}
-                    />
-                  </div>
-                  <span
-                    className={`text-[11px] font-medium ${
-                      day.isBest && day.totalMinutes > 0
-                        ? 'text-[#4338CA] dark:text-[#818CF8] font-bold'
-                        : 'text-[#5A5A55] dark:text-[#9CA3AF]'
-                    }`}
-                  >
-                    {day.label}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="text-xs text-[#5A5A55] dark:text-[#9CA3AF] flex flex-wrap items-center justify-between gap-2 tabular-nums">
-            <span>
-              Live Timer:{' '}
-              <strong className="font-mono text-[#141413] dark:text-[#F3F4F6]">
-                {formatDurationLabel(sessionQuality.liveMinutes)}
-              </strong>{' '}
-              ({sessionQuality.liveCount})
-            </span>
-            <span>
-              Manual Logs:{' '}
-              <strong className="font-mono text-[#141413] dark:text-[#F3F4F6]">
-                {formatDurationLabel(sessionQuality.manualMinutes)}
-              </strong>{' '}
-              ({sessionQuality.manualCount})
-            </span>
-          </div>
-        </section>
-
-        {/* Focus Mode & Method Breakdown */}
-        <section
-          data-testid="focus-mode-mix-section"
-          className="lg:col-span-6 rounded-2xl bg-white dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834] p-5 space-y-4"
-        >
+      {/* 4c. Weekday Study Rhythm */}
+      <section
+        data-testid="weekday-rhythm-section"
+        className="rounded-2xl bg-white dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834] p-5 flex flex-col justify-between space-y-4"
+      >
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h2 className="font-display text-base font-semibold text-[#141413] dark:text-[#F3F4F6]">
-              Timer Mode &amp; Session Mix
+              Day-of-Week Study Rhythm
             </h2>
             <p className="text-xs text-[#5A5A55] dark:text-[#9CA3AF]">
-              Time share and average focus rating across study modes
+              Total focus minutes by weekday (Mon–Sun)
             </p>
           </div>
-
-          {sessionQuality.modeBreakdown.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-[#E5E5E0] dark:border-[#232834] p-6 text-center text-xs text-[#5A5A55] dark:text-[#9CA3AF]">
-              Complete or log study sessions to compare Pomodoro, Flowtime, Scheduled, and Manual sessions.
-            </div>
+          {inspectedWeekday && inspectedWeekday.totalMinutes > 0 ? (
+            <span className="text-xs font-mono tabular-nums font-semibold text-[#4338CA] dark:text-[#A5B4FC]">
+              {inspectedWeekday.label}: {formatDurationLabel(inspectedWeekday.totalMinutes)} (avg{' '}
+              {formatDurationLabel(inspectedWeekday.avgMinutesPerActiveDay)})
+            </span>
           ) : (
-            <div className="space-y-3">
-              {sessionQuality.modeBreakdown.map((item) => (
-                <div key={item.mode} className="space-y-1">
-                  <div className="flex items-center justify-between gap-2 text-xs">
-                    <span className="font-semibold text-[#141413] dark:text-[#F3F4F6]">
-                      {item.label}{' '}
-                      <span className="font-normal text-[#5A5A55] dark:text-[#9CA3AF] tabular-nums">
-                        ({item.count} · ★ {item.avgRating.toFixed(1)})
-                      </span>
-                    </span>
-                    <span className="font-mono tabular-nums text-[#141413] dark:text-[#F3F4F6]">
-                      {formatDurationLabel(item.minutes)}{' '}
-                      <span className="text-[#5A5A55] dark:text-[#9CA3AF]">({item.percentage}%)</span>
-                    </span>
-                  </div>
-                  <div className="h-2 w-full rounded-full bg-[#ECECE7] dark:bg-[#1F2430] overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-[#4338CA] dark:bg-[#6366F1]"
-                      style={{ width: `${item.percentage}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
+            <span className="text-xs text-[#5A5A55] dark:text-[#9CA3AF]">No data yet</span>
           )}
-        </section>
-      </div>
+        </div>
+
+        <div
+          className="h-40 flex items-end justify-between gap-2 pt-4 border-b border-[#E5E5E0] dark:border-[#232834] pb-2"
+          data-testid="weekday-rhythm-chart"
+        >
+          {weekdayRhythm.map((day) => {
+            const pct = Math.round((day.totalMinutes / maxWeekdayMinutes) * 100);
+            const isSelected = activeWeekdayIndex === day.weekdayIndex;
+            return (
+              <button
+                key={day.label}
+                type="button"
+                onMouseEnter={() => setActiveWeekdayIndex(day.weekdayIndex)}
+                onMouseLeave={() => setActiveWeekdayIndex(null)}
+                onClick={() =>
+                  setActiveWeekdayIndex((prev) =>
+                    prev === day.weekdayIndex ? null : day.weekdayIndex
+                  )
+                }
+                aria-label={`${day.label}: ${formatDurationLabel(day.totalMinutes)}`}
+                className="flex-1 h-full flex flex-col items-center justify-end gap-1.5 cursor-pointer group"
+              >
+                <div className="w-full flex items-end justify-center h-28">
+                  <div
+                    style={{ height: `${Math.max(day.totalMinutes > 0 ? 8 : 3, pct)}%` }}
+                    className={`w-6 sm:w-8 rounded-t-md transition-all ${
+                      day.totalMinutes === 0
+                        ? 'bg-[#ECECE7] dark:bg-[#1F2430]'
+                        : day.isBest || isSelected
+                        ? 'bg-[#4338CA] dark:bg-[#6366F1]'
+                        : 'bg-[#A5B4FC] dark:bg-[#3730A3] group-hover:bg-[#6366F1]'
+                    }`}
+                  />
+                </div>
+                <span
+                  className={`text-[11px] font-medium ${
+                    day.isBest && day.totalMinutes > 0
+                      ? 'text-[#4338CA] dark:text-[#818CF8] font-bold'
+                      : 'text-[#5A5A55] dark:text-[#9CA3AF]'
+                  }`}
+                >
+                  {day.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="text-xs text-[#5A5A55] dark:text-[#9CA3AF] flex flex-wrap items-center justify-between gap-2 tabular-nums">
+          <span>
+            Live Timer:{' '}
+            <strong className="font-mono text-[#141413] dark:text-[#F3F4F6]">
+              {formatDurationLabel(sessionQuality.liveMinutes)}
+            </strong>{' '}
+            ({sessionQuality.liveCount})
+          </span>
+          <span>
+            Manual Logs:{' '}
+            <strong className="font-mono text-[#141413] dark:text-[#F3F4F6]">
+              {formatDurationLabel(sessionQuality.manualMinutes)}
+            </strong>{' '}
+            ({sessionQuality.manualCount})
+          </span>
+        </div>
+      </section>
 
       {/* 4d. A/L Past Paper Mistake Breakdown & Syllabus Confidence Depth */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
