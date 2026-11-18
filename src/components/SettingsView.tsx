@@ -12,6 +12,7 @@ import {
   Upload,
 } from 'lucide-react';
 import type { User } from 'firebase/auth';
+import { DEFAULT_FIREBASE_CONFIG_JSON } from '../data/firebaseDefaultConfig';
 import type { AppSettings, ExamCountdown, SubjectConfig, SubjectKey } from '../types/app';
 import { PWAInstallButton } from './PWAInstallButton';
 
@@ -336,69 +337,39 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
         </div>
       </section>
 
-      {/* Optional Real-Time Firebase Sync */}
+      {/* Built-in Real-Time Firebase Cloud Sync */}
       <section className="rounded-2xl bg-white dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834] p-5 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h2 className="font-display text-base font-semibold text-[#141413] dark:text-[#F3F4F6]">
-              Optional Cloud Firestore Sync
+              Cloud Firestore Sync
             </h2>
             <p className="text-xs text-[#5A5A55] dark:text-[#9CA3AF] mt-0.5">
-              Paste your own Firebase Web Config JSON to sync across devices with offline persistence & timestamp conflict resolution.
+              Built-in real-time sync across devices with offline persistence & persistent sign-in.
             </p>
           </div>
           <div className="flex items-center gap-1.5 text-xs font-medium">
-            {syncStatus === 'connected' || syncStatus === 'syncing' ? (
+            {firebaseUser && (syncStatus === 'connected' || syncStatus === 'syncing') ? (
               <>
                 <Cloud className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 <span className="text-emerald-700 dark:text-emerald-400">
-                  {syncStatus === 'syncing' ? 'Syncing...' : `Connected (${firebaseProjectId})`}
+                  {syncStatus === 'syncing' ? 'Syncing...' : `Synced (${firebaseProjectId})`}
                 </span>
               </>
             ) : (
               <>
                 <CloudOff className="w-4 h-4 text-[#9CA3AF]" />
-                <span className="text-[#5A5A55] dark:text-[#9CA3AF]">Local-only mode</span>
+                <span className="text-[#5A5A55] dark:text-[#9CA3AF]">
+                  {firebaseProjectId ? `Sign in to sync (${firebaseProjectId})` : 'Local-only mode'}
+                </span>
               </>
             )}
           </div>
         </div>
 
-        <div>
-          <label htmlFor="firebase-config-json" className="block text-xs font-medium mb-1.5">
-            Firebase Web Config JSON
-          </label>
-          <textarea
-            id="firebase-config-json"
-            rows={4}
-            value={configDraft}
-            onChange={(e) => setConfigDraft(e.target.value)}
-            placeholder='{"apiKey": "...", "authDomain": "...", "projectId": "...", "appId": "..."}'
-            className="w-full rounded-xl bg-[#F7F7F5] dark:bg-[#0B0D11] border border-[#E5E5E0] dark:border-[#232834] px-3.5 py-2.5 text-xs font-mono text-[#141413] dark:text-[#F3F4F6]"
-          />
-          <div className="flex flex-wrap items-center gap-2 mt-2.5">
-            <button
-              type="button"
-              onClick={() => void handleConnect()}
-              className="px-4 py-2 rounded-xl bg-[#4338CA] dark:bg-[#6366F1] text-white text-xs font-semibold cursor-pointer"
-            >
-              {firebaseProjectId ? 'Reconnect Config' : 'Initialize Firebase'}
-            </button>
-            {firebaseProjectId && (
-              <button
-                type="button"
-                onClick={() => void onDisconnectFirebase()}
-                className="px-4 py-2 rounded-xl border border-[#E5E5E0] dark:border-[#232834] text-xs font-medium cursor-pointer"
-              >
-                Disconnect
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Auth Section when Firebase Project is initialized */}
+        {/* Auth Section (Available immediately via built-in Firebase config) */}
         {firebaseProjectId && (
-          <div className="pt-4 border-t border-[#E5E5E0] dark:border-[#232834] space-y-4">
+          <div className="space-y-4">
             {firebaseUser ? (
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-[#F7F7F5] dark:bg-[#0B0D11] border border-[#E5E5E0] dark:border-[#232834] p-3.5">
                 <div>
@@ -406,7 +377,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                     Signed in as {firebaseUser.email || firebaseUser.displayName || firebaseUser.uid}
                   </div>
                   <div className="text-[11px] text-[#5A5A55] dark:text-[#9CA3AF]">
-                    Real-time Cloud Firestore listener active
+                    Real-time Cloud Firestore listener active · Session stays signed in across reloads
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -479,6 +450,48 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             )}
           </div>
         )}
+
+        {/* Advanced Custom Firebase Config */}
+        <details className="pt-3 border-t border-[#E5E5E0] dark:border-[#232834]">
+          <summary className="text-xs font-medium text-[#5A5A55] dark:text-[#9CA3AF] cursor-pointer select-none hover:text-[#141413] dark:hover:text-[#F3F4F6]">
+            Advanced: Custom Firebase Web Config JSON
+          </summary>
+          <div className="mt-3 space-y-2.5">
+            <label htmlFor="firebase-config-json" className="block text-xs font-medium">
+              Firebase Web Config JSON
+            </label>
+            <textarea
+              id="firebase-config-json"
+              rows={5}
+              value={configDraft}
+              onChange={(e) => setConfigDraft(e.target.value)}
+              placeholder='{"apiKey": "...", "authDomain": "...", "projectId": "...", "appId": "..."}'
+              className="w-full rounded-xl bg-[#F7F7F5] dark:bg-[#0B0D11] border border-[#E5E5E0] dark:border-[#232834] px-3.5 py-2.5 text-xs font-mono text-[#141413] dark:text-[#F3F4F6]"
+            />
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => void handleConnect()}
+                className="px-4 py-2 rounded-xl bg-[#4338CA] dark:bg-[#6366F1] text-white text-xs font-semibold cursor-pointer"
+              >
+                Apply Config
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setStatusMessage(null);
+                  setConfigDraft(DEFAULT_FIREBASE_CONFIG_JSON);
+                  void onDisconnectFirebase().then(() => {
+                    setStatusMessage('Restored built-in Sankalpa Firebase configuration.');
+                  });
+                }}
+                className="px-4 py-2 rounded-xl border border-[#E5E5E0] dark:border-[#232834] text-xs font-medium cursor-pointer"
+              >
+                Restore Built-in Config
+              </button>
+            </div>
+          </div>
+        </details>
 
         {(statusMessage || syncError) && (
           <p className="text-xs font-medium text-[#4338CA] dark:text-[#A5B4FC]">

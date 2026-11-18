@@ -1,3 +1,4 @@
+import { DEFAULT_FIREBASE_CONFIG_JSON } from '../data/firebaseDefaultConfig';
 import { createInitialAppState } from '../data/initialSeed';
 import type { AppState } from '../types/app';
 import { reconcileTaskBlockLinks } from '../utils/bidirectionalSync';
@@ -15,11 +16,15 @@ export function loadAppState(): AppState {
     }
     const parsed = JSON.parse(raw) as Partial<AppState>;
     const fallback = createInitialAppState();
+    const mergedSettings = { ...fallback.settings, ...(parsed.settings ?? {}) };
+    if (!mergedSettings.firebaseConfigJson?.trim()) {
+      mergedSettings.firebaseConfigJson = DEFAULT_FIREBASE_CONFIG_JSON;
+    }
     const hydrated: AppState = {
       ...fallback,
       ...parsed,
       subjects: { ...fallback.subjects, ...(parsed.subjects ?? {}) },
-      settings: { ...fallback.settings, ...(parsed.settings ?? {}) },
+      settings: mergedSettings,
       activeTimer: { ...fallback.activeTimer, ...(parsed.activeTimer ?? {}) },
       tasks: rolloverRecurringTasks(Array.isArray(parsed.tasks) ? parsed.tasks : []),
       blocks: Array.isArray(parsed.blocks) ? parsed.blocks : [],
@@ -58,11 +63,15 @@ export function parseImportedStateJson(jsonText: string): AppState {
     throw new Error('Invalid Sankalpa backup JSON structure.');
   }
   const fallback = createInitialAppState();
+  const mergedSettings = { ...fallback.settings, ...(parsed.settings ?? {}) };
+  if (!mergedSettings.firebaseConfigJson?.trim()) {
+    mergedSettings.firebaseConfigJson = DEFAULT_FIREBASE_CONFIG_JSON;
+  }
   return reconcileTaskBlockLinks({
     ...fallback,
     ...parsed,
     subjects: { ...fallback.subjects, ...(parsed.subjects ?? {}) },
-    settings: { ...fallback.settings, ...(parsed.settings ?? {}) },
+    settings: mergedSettings,
     activeTimer: { ...fallback.activeTimer, ...(parsed.activeTimer ?? {}) },
     syllabus: Array.isArray(parsed.syllabus) && parsed.syllabus.length > 0 ? parsed.syllabus : fallback.syllabus,
     lastModified: Date.now(),

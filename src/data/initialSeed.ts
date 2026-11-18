@@ -1,4 +1,5 @@
 import type { AppState } from '../types/app';
+import { DEFAULT_FIREBASE_CONFIG_JSON } from './firebaseDefaultConfig';
 import { buildBilingualSyllabusSeed } from './syllabusSeed';
 
 export function createInitialAppState(nowDate: Date = new Date()): AppState {
@@ -42,7 +43,7 @@ export function createInitialAppState(nowDate: Date = new Date()): AppState {
       theme: 'light',
       medium: 'bilingual',
       dailyGoalMinutes: 240,
-      firebaseConfigJson: '',
+      firebaseConfigJson: DEFAULT_FIREBASE_CONFIG_JSON,
       updatedAt: nowMs,
     },
     activeTimer: {

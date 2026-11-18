@@ -27,7 +27,7 @@ import { TimerMiniPlayer } from './components/TimerMiniPlayer';
 import { TimerView } from './components/TimerView';
 import { useOnlineStatus } from './hooks/useOnlineStatus';
 import {
-  disconnectUserFirebase,
+  DEFAULT_FIREBASE_CONFIG_JSON,
   initUserFirebase,
   pullStateFromFirestore,
   pushStateToFirestore,
@@ -169,34 +169,57 @@ export default function App() {
     }
   }, [elapsedMs, state.activeTimer]);
 
-  // Connect Firebase automatically if user saved a config JSON previously
-  const connectFirebaseWithJson = useCallback(async (configJson: string) => {
-    setSyncError(null);
-    const handle = await initUserFirebase(configJson);
-    firebaseRef.current = handle;
-    setFirebaseProjectId(handle.projectId);
-    setState((prev) => ({
-      ...prev,
-      settings: {
-        ...prev.settings,
-        firebaseConfigJson: configJson,
-        updatedAt: Date.now(),
-      },
-      lastModified: Date.now(),
-    }));
+  const authUnsubRef = useRef<(() => void) | null>(null);
 
-    subscribeFirebaseAuth(handle.auth, (user) => {
-      setFirebaseUser(user);
-      setSyncStatus(user ? 'connected' : 'offline_local');
-    });
-  }, []);
+  // Initialize Firebase (defaults to built-in sankalpa-45fda project)
+  const initializeFirebaseInstance = useCallback(
+    async (configJson: string, persistConfig: boolean) => {
+      setSyncError(null);
+      const effectiveJson = configJson.trim() || DEFAULT_FIREBASE_CONFIG_JSON;
+      const handle = await initUserFirebase(effectiveJson);
+      firebaseRef.current = handle;
+      setFirebaseProjectId(handle.projectId);
+
+      if (persistConfig) {
+        const now = Date.now();
+        setState((prev) => ({
+          ...prev,
+          settings: {
+            ...prev.settings,
+            firebaseConfigJson: effectiveJson,
+            updatedAt: now,
+          },
+          lastModified: now,
+        }));
+      }
+
+      authUnsubRef.current?.();
+      authUnsubRef.current = subscribeFirebaseAuth(handle.auth, (user) => {
+        setFirebaseUser(user);
+        setSyncStatus(user ? 'connected' : 'offline_local');
+      });
+    },
+    []
+  );
+
+  const connectFirebaseWithJson = useCallback(
+    async (configJson: string) => {
+      await initializeFirebaseInstance(configJson, true);
+    },
+    [initializeFirebaseInstance]
+  );
 
   useEffect(() => {
-    if (state.settings.firebaseConfigJson && !firebaseRef.current) {
-      void connectFirebaseWithJson(state.settings.firebaseConfigJson).catch(() => {
-        // Ignore auto-connect error on startup if offline/invalid
-      });
-    }
+    void initializeFirebaseInstance(
+      state.settings.firebaseConfigJson || DEFAULT_FIREBASE_CONFIG_JSON,
+      false
+    ).catch(() => {
+      // Ignore startup init error if offline/blocked; localStorage remains active
+    });
+    return () => {
+      authUnsubRef.current?.();
+      authUnsubRef.current = null;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -827,12 +850,7 @@ export default function App() {
                 onResetAllData={() => setState(resetAppState())}
                 onConnectFirebase={connectFirebaseWithJson}
                 onDisconnectFirebase={async () => {
-                  await disconnectUserFirebase();
-                  firebaseRef.current = null;
-                  setFirebaseProjectId(null);
-                  setFirebaseUser(null);
-                  setSyncStatus('offline_local');
-                  handleUpdateSettings({ firebaseConfigJson: '' });
+                  await initializeFirebaseInstance(DEFAULT_FIREBASE_CONFIG_JSON, true);
                 }}
                 onSignInGoogle={async () => {
                   if (!firebaseRef.current) return;

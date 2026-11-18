@@ -1,11 +1,15 @@
 import { deleteApp, getApps, initializeApp, type FirebaseApp } from 'firebase/app';
 import {
+  browserLocalPersistence,
   createUserWithEmailAndPassword,
   getAuth,
+  getRedirectResult,
   GoogleAuthProvider,
   onAuthStateChanged,
+  setPersistence,
   signInWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect,
   signOut,
   type Auth,
   type User,
@@ -13,6 +17,7 @@ import {
 import {
   doc,
   getDoc,
+  getFirestore,
   initializeFirestore,
   onSnapshot,
   persistentLocalCache,
@@ -22,24 +27,23 @@ import {
 } from 'firebase/firestore';
 import type { AppState } from '../types/app';
 import { reconcileTaskBlockLinks } from '../utils/bidirectionalSync';
+import {
+  DEFAULT_FIREBASE_CONFIG,
+  DEFAULT_FIREBASE_CONFIG_JSON,
+  type FirebaseConfigObject,
+} from '../data/firebaseDefaultConfig';
 
-export interface FirebaseConfigObject {
-  apiKey: string;
-  authDomain: string;
-  projectId: string;
-  storageBucket?: string;
-  messagingSenderId?: string;
-  appId: string;
-}
+export { DEFAULT_FIREBASE_CONFIG, DEFAULT_FIREBASE_CONFIG_JSON, type FirebaseConfigObject };
 
 export interface FirebaseHandle {
   app: FirebaseApp;
   auth: Auth;
   db: Firestore;
   projectId: string;
+  isBuiltInDefault: boolean;
 }
 
-const APP_NAME = 'sankalpa-byo-sync';
+const APP_NAME = 'sankalpa-cloud-sync';
 
 /**
  * Recursively removes undefined values because Firestore rejects undefined properties.
@@ -60,35 +64,60 @@ export function stripUndefined<T>(value: T): T {
   return value;
 }
 
-export function parseFirebaseConfigJson(rawJson: string): FirebaseConfigObject {
-  const cleaned = rawJson.trim();
+export function parseFirebaseConfigJson(rawJson?: string): {
+  config: FirebaseConfigObject;
+  isBuiltInDefault: boolean;
+} {
+  const cleaned = (rawJson ?? '').trim();
   if (!cleaned) {
-    throw new Error('Paste your Firebase Web Config JSON first.');
+    return { config: DEFAULT_FIREBASE_CONFIG, isBuiltInDefault: true };
   }
   const parsed = JSON.parse(cleaned) as Partial<FirebaseConfigObject>;
   if (!parsed.apiKey || !parsed.authDomain || !parsed.projectId || !parsed.appId) {
     throw new Error('Config JSON must include apiKey, authDomain, projectId, and appId.');
   }
-  return parsed as FirebaseConfigObject;
+  const isBuiltInDefault =
+    parsed.projectId === DEFAULT_FIREBASE_CONFIG.projectId &&
+    parsed.apiKey === DEFAULT_FIREBASE_CONFIG.apiKey;
+  return { config: parsed as FirebaseConfigObject, isBuiltInDefault };
 }
 
-export async function initUserFirebase(rawJson: string): Promise<FirebaseHandle> {
-  const config = parseFirebaseConfigJson(rawJson);
+export async function initUserFirebase(rawJson?: string): Promise<FirebaseHandle> {
+  const { config, isBuiltInDefault } = parseFirebaseConfigJson(rawJson);
   const existing = getApps().find((a) => a.name === APP_NAME);
-  if (existing) {
-    await deleteApp(existing);
+
+  let app: FirebaseApp;
+  if (
+    existing &&
+    existing.options.projectId === config.projectId &&
+    existing.options.apiKey === config.apiKey
+  ) {
+    app = existing;
+  } else {
+    if (existing) {
+      await deleteApp(existing);
+    }
+    app = initializeApp(config, APP_NAME);
   }
-  const app = initializeApp(config, APP_NAME);
+
   const auth = getAuth(app);
+  try {
+    await setPersistence(auth, browserLocalPersistence);
+  } catch {
+    // Ignore if browser environment restricts persistence
+  }
+  // Complete any pending mobile/PWA redirect sign-in silently
+  void getRedirectResult(auth).catch(() => undefined);
+
   let db: Firestore;
   try {
     db = initializeFirestore(app, {
       localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
     });
   } catch {
-    db = initializeFirestore(app, {});
+    db = getFirestore(app);
   }
-  return { app, auth, db, projectId: config.projectId };
+  return { app, auth, db, projectId: config.projectId, isBuiltInDefault };
 }
 
 export async function disconnectUserFirebase(): Promise<void> {
@@ -102,18 +131,46 @@ export function subscribeFirebaseAuth(auth: Auth, cb: (user: User | null) => voi
   return onAuthStateChanged(auth, cb);
 }
 
-export async function signInFirebaseGoogle(auth: Auth): Promise<User> {
+export async function signInFirebaseGoogle(auth: Auth): Promise<User | null> {
+  try {
+    await setPersistence(auth, browserLocalPersistence);
+  } catch {
+    // Keep default persistence
+  }
   const provider = new GoogleAuthProvider();
-  const res = await signInWithPopup(auth, provider);
-  return res.user;
+  provider.setCustomParameters({ prompt: 'select_account' });
+  try {
+    const res = await signInWithPopup(auth, provider);
+    return res.user;
+  } catch (err) {
+    const code = (err as { code?: string })?.code;
+    if (
+      code === 'auth/popup-blocked' ||
+      code === 'auth/operation-not-supported-in-this-environment'
+    ) {
+      await signInWithRedirect(auth, provider);
+      return null;
+    }
+    throw err;
+  }
 }
 
 export async function signInFirebaseEmail(auth: Auth, email: string, password: string): Promise<User> {
+  try {
+    await setPersistence(auth, browserLocalPersistence);
+  } catch {
+    // Keep default persistence
+  }
   const res = await signInWithEmailAndPassword(auth, email.trim(), password);
   return res.user;
 }
 
 export async function signUpFirebaseEmail(auth: Auth, email: string, password: string): Promise<User> {
+  try {
+    await setPersistence(auth, browserLocalPersistence);
+  } catch {
+    // Keep default persistence
+  }
   const res = await createUserWithEmailAndPassword(auth, email.trim(), password);
   return res.user;
 }

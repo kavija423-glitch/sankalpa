@@ -1,5 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { DEFAULT_FIREBASE_CONFIG } from '../data/firebaseDefaultConfig';
+import { createInitialAppState } from '../data/initialSeed';
 import { mergeByTimestamp, rolloverRecurringTasks } from './syncMerge';
 import type { TaskItem } from '../types/app';
 
@@ -42,4 +44,13 @@ test('rolloverRecurringTasks advances past-due incomplete weekday tasks to today
   ];
   const rolled = rolloverRecurringTasks(tasks, ref);
   assert.equal(rolled[0].dueDate, '2026-11-17');
+});
+
+test('built-in Firebase Web Config defaults to sankalpa-45fda', () => {
+  assert.equal(DEFAULT_FIREBASE_CONFIG.projectId, 'sankalpa-45fda');
+  assert.equal(DEFAULT_FIREBASE_CONFIG.authDomain, 'sankalpa-45fda.firebaseapp.com');
+  const fresh = createInitialAppState();
+  const parsed = JSON.parse(fresh.settings.firebaseConfigJson) as { projectId: string; appId: string };
+  assert.equal(parsed.projectId, 'sankalpa-45fda');
+  assert.equal(parsed.appId, '1:285359953972:web:3eb866da7092e420639261');
 });
