@@ -2,18 +2,27 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertTriangle,
   Award,
+  BookOpen,
   Calendar as CalendarIcon,
   CheckCircle2,
+  CheckSquare,
   ChevronLeft,
   ChevronRight,
   Clock,
+  FileText,
   Flame,
+  ListTodo,
   Pencil,
+  Star,
+  Target,
+  Timer,
   TrendingDown,
   TrendingUp,
+  Trophy,
 } from 'lucide-react';
 import type {
   CalendarBlock,
+  ExamCountdown,
   PastPaper,
   StudySession,
   SubjectConfig,
@@ -25,19 +34,28 @@ import {
   aggregateDailySessions,
   buildMonthlyHeatmapGrid,
   buildYearlyHeatmapColumns,
+  computeDailyPlanExecutionAccuracy,
+  computeDailyTaskProgress,
+  computeGoalConsistencyAndBestDay,
   computeLast7DaysPlannedVsActual,
+  computePastPaperAnalytics,
   computePeakFocusHours,
   computePeriodComparison,
   computePlanExecutionAccuracy,
   computeRolling7DayAverage,
+  computeSessionQualityAndRhythm,
   computeStreaks,
   computeSubjectBreakdown,
+  computeSyllabusDepthStats,
+  computeTaskBacklogStats,
+  computeTodayFocusStats,
   computeSyllabusMasterySummary,
+  computeWeekdayRhythm,
   computeWeeklySubjectBalanceAlerts,
   type AnalyticsTimeframe,
   type HeatmapIntensity,
 } from '../utils/analyticsMath';
-import { formatDurationLabel, formatTime24 } from '../utils/calendarMath';
+import { daysUntilISO, formatDurationLabel, formatTime24 } from '../utils/calendarMath';
 import { toISODateLocal } from '../utils/nlpTaskParser';
 import { extractRedoQueue } from '../utils/paperGenerator';
 
@@ -49,6 +67,7 @@ interface AnalyticsViewProps {
   syllabus: SyllabusUnit[];
   subjects: Record<SubjectKey, SubjectConfig>;
   dailyGoalMinutes: number;
+  examCountdowns?: ExamCountdown[];
   onOpenLogSession: () => void;
   onEditManualSession: (session: StudySession) => void;
 }
@@ -83,6 +102,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
   syllabus,
   subjects,
   dailyGoalMinutes,
+  examCountdowns = [],
   onOpenLogSession,
   onEditManualSession,
 }) => {
@@ -110,6 +130,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
   } | null>(null);
   const [activeHourIndex, setActiveHourIndex] = useState<number | null>(null);
   const [activeTrendDay, setActiveTrendDay] = useState<string | null>(null);
+  const [activeWeekdayIndex, setActiveWeekdayIndex] = useState<number | null>(null);
   const yearlyScrollRef = useRef<HTMLDivElement | null>(null);
 
   const activeSessions = useMemo(
@@ -132,6 +153,18 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
   const planAccuracy = useMemo(
     () => computePlanExecutionAccuracy(blocks, activeSessions, todayISO),
     [blocks, activeSessions, todayISO]
+  );
+  const todayStats = useMemo(
+    () => computeTodayFocusStats(dailyMap, todayISO, dailyGoalMinutes),
+    [dailyMap, todayISO, dailyGoalMinutes]
+  );
+  const dailyPlanAccuracy = useMemo(
+    () => computeDailyPlanExecutionAccuracy(blocks, activeSessions, todayISO),
+    [blocks, activeSessions, todayISO]
+  );
+  const dailyTaskProgress = useMemo(
+    () => computeDailyTaskProgress(tasks, todayISO),
+    [tasks, todayISO]
   );
   const periodComparison = useMemo(
     () => computePeriodComparison(activeSessions, timeframe, todayISO),
@@ -197,6 +230,38 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
 
   const syllabusSummary = useMemo(
     () => computeSyllabusMasterySummary(syllabus, subjects),
+    [syllabus, subjects]
+  );
+  const sessionQuality = useMemo(
+    () => computeSessionQualityAndRhythm(activeSessions),
+    [activeSessions]
+  );
+  const weekdayRhythm = useMemo(
+    () => computeWeekdayRhythm(activeSessions),
+    [activeSessions]
+  );
+  const bestWeekdayDatum = useMemo(
+    () => weekdayRhythm.find((d) => d.isBest && d.totalMinutes > 0) ?? null,
+    [weekdayRhythm]
+  );
+  const maxWeekdayMinutes = Math.max(30, ...weekdayRhythm.map((d) => d.totalMinutes));
+  const inspectedWeekday =
+    activeWeekdayIndex !== null ? weekdayRhythm[activeWeekdayIndex] : bestWeekdayDatum;
+
+  const goalConsistency = useMemo(
+    () => computeGoalConsistencyAndBestDay(dailyMap, todayISO, dailyGoalMinutes),
+    [dailyMap, todayISO, dailyGoalMinutes]
+  );
+  const taskBacklog = useMemo(
+    () => computeTaskBacklogStats(tasks, todayISO),
+    [tasks, todayISO]
+  );
+  const paperAnalytics = useMemo(
+    () => computePastPaperAnalytics(papers, subjects),
+    [papers, subjects]
+  );
+  const syllabusDepth = useMemo(
+    () => computeSyllabusDepthStats(syllabus, subjects),
     [syllabus, subjects]
   );
   const redoCount = useMemo(() => extractRedoQueue(papers).length, [papers]);
@@ -359,23 +424,165 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
         </div>
 
         {/* Card 4: Plan Execution Accuracy */}
-        <div className="rounded-2xl bg-white dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834] p-4">
-          <div className="flex items-center justify-between text-xs text-[#5A5A55] dark:text-[#9CA3AF]">
-            <span>Plan Execution Accuracy</span>
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+        <div className="rounded-2xl bg-white dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834] p-4 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between text-xs text-[#5A5A55] dark:text-[#9CA3AF]">
+              <span>Plan Execution Accuracy</span>
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <div className="font-mono tabular-nums text-2xl font-bold text-[#141413] dark:text-[#F3F4F6] mt-2">
+              {planAccuracy.accuracyPercent}%
+            </div>
+            <div className="text-[11px] text-[#5A5A55] dark:text-[#9CA3AF] mt-1 font-mono tabular-nums">
+              {planAccuracy.scheduledMinutes > 0
+                ? `${formatDurationLabel(planAccuracy.completedMinutes)} / ${formatDurationLabel(planAccuracy.scheduledMinutes)} blocks`
+                : 'No blocks scheduled yet'}
+            </div>
           </div>
-          <div className="font-mono tabular-nums text-2xl font-bold text-[#141413] dark:text-[#F3F4F6] mt-2">
-            {planAccuracy.accuracyPercent}%
-          </div>
-          <div className="text-[11px] text-[#5A5A55] dark:text-[#9CA3AF] mt-1 font-mono tabular-nums">
-            {planAccuracy.scheduledMinutes > 0
-              ? `${formatDurationLabel(planAccuracy.completedMinutes)} / ${formatDurationLabel(planAccuracy.scheduledMinutes)} blocks`
-              : 'No blocks scheduled yet'}
-          </div>
-          <div className="mt-1.5 h-1.5 w-full rounded-full bg-[#ECECE7] dark:bg-[#1F2430] overflow-hidden">
+          <div className="mt-2 h-1.5 w-full rounded-full bg-[#ECECE7] dark:bg-[#1F2430] overflow-hidden">
             <div
               className="h-full rounded-full bg-emerald-600 dark:bg-emerald-400"
               style={{ width: `${planAccuracy.accuracyPercent}%` }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* 1b. Daily KPI Row (4 Symmetrical Today Cards) */}
+      <div
+        data-testid="daily-kpi-row"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4"
+      >
+        {/* Daily Card 1: Today's Focus Time Total */}
+        <div
+          data-testid="kpi-today-focus"
+          className="rounded-2xl bg-white dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834] p-4 flex flex-col justify-between"
+        >
+          <div>
+            <div className="flex items-center justify-between text-xs text-[#5A5A55] dark:text-[#9CA3AF]">
+              <span>Today&apos;s Focus Time</span>
+              <Clock className="w-4 h-4 text-[#4338CA] dark:text-[#818CF8]" />
+            </div>
+            <div className="font-mono tabular-nums text-2xl font-bold text-[#141413] dark:text-[#F3F4F6] mt-2">
+              {formatDurationLabel(todayStats.todayMinutes)}
+            </div>
+            <div className="mt-1 flex items-center gap-1 text-[11px] font-medium tabular-nums">
+              {todayStats.deltaFromYesterday > 0 ? (
+                <TrendingUp className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              ) : todayStats.deltaFromYesterday < 0 ? (
+                <TrendingDown className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 shrink-0" />
+              ) : null}
+              <span
+                className={
+                  todayStats.deltaFromYesterday > 0
+                    ? 'text-emerald-700 dark:text-emerald-400'
+                    : todayStats.deltaFromYesterday < 0
+                    ? 'text-rose-600 dark:text-rose-400'
+                    : 'text-[#5A5A55] dark:text-[#9CA3AF]'
+                }
+              >
+                {todayStats.todayMinutes === 0 && todayStats.yesterdayMinutes === 0
+                  ? 'No sessions logged yet'
+                  : todayStats.deltaFromYesterday === 0
+                  ? 'Same as yesterday'
+                  : `${todayStats.deltaFromYesterday > 0 ? '+' : '-'}${formatDurationLabel(
+                      Math.abs(todayStats.deltaFromYesterday)
+                    )} vs yesterday`}
+              </span>
+            </div>
+          </div>
+          <div className="text-[11px] text-[#5A5A55] dark:text-[#9CA3AF] mt-1 font-mono tabular-nums">
+            {todayStats.todaySessions}{' '}
+            {todayStats.todaySessions === 1 ? 'session' : 'sessions'} today · Yesterday:{' '}
+            {formatDurationLabel(todayStats.yesterdayMinutes)}
+          </div>
+        </div>
+
+        {/* Daily Card 2: Daily Goal Completion % */}
+        <div
+          data-testid="kpi-daily-goal"
+          className="rounded-2xl bg-white dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834] p-4 flex flex-col justify-between"
+        >
+          <div>
+            <div className="flex items-center justify-between text-xs text-[#5A5A55] dark:text-[#9CA3AF]">
+              <span>Daily Goal Completion</span>
+              <Target className="w-4 h-4 text-[#4338CA] dark:text-[#818CF8]" />
+            </div>
+            <div className="font-mono tabular-nums text-2xl font-bold text-[#141413] dark:text-[#F3F4F6] mt-2">
+              {todayStats.goalPercent}%
+            </div>
+            <div className="text-[11px] text-[#5A5A55] dark:text-[#9CA3AF] mt-1 font-mono tabular-nums">
+              {formatDurationLabel(todayStats.todayMinutes)} /{' '}
+              {formatDurationLabel(dailyGoalMinutes)} ·{' '}
+              {todayStats.remainingMinutes > 0
+                ? `${formatDurationLabel(todayStats.remainingMinutes)} left`
+                : todayStats.extraMinutes > 0
+                ? `+${formatDurationLabel(todayStats.extraMinutes)} extra`
+                : 'Target reached'}
+            </div>
+          </div>
+          <div className="mt-2 h-1.5 w-full rounded-full bg-[#ECECE7] dark:bg-[#1F2430] overflow-hidden">
+            <div
+              className="h-full rounded-full bg-[#4338CA] dark:bg-[#6366F1]"
+              style={{ width: `${todayStats.goalBarPercent}%` }}
+            />
+          </div>
+        </div>
+
+        {/* Daily Card 3: Daily Plan Execution Accuracy */}
+        <div
+          data-testid="kpi-daily-plan-accuracy"
+          className="rounded-2xl bg-white dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834] p-4 flex flex-col justify-between"
+        >
+          <div>
+            <div className="flex items-center justify-between text-xs text-[#5A5A55] dark:text-[#9CA3AF]">
+              <span>Daily Plan Accuracy</span>
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <div className="font-mono tabular-nums text-2xl font-bold text-[#141413] dark:text-[#F3F4F6] mt-2">
+              {dailyPlanAccuracy.accuracyPercent}%
+            </div>
+            <div className="text-[11px] text-[#5A5A55] dark:text-[#9CA3AF] mt-1 font-mono tabular-nums">
+              {dailyPlanAccuracy.scheduledMinutes > 0
+                ? `${formatDurationLabel(dailyPlanAccuracy.completedMinutes)} / ${formatDurationLabel(
+                    dailyPlanAccuracy.scheduledMinutes
+                  )} (${dailyPlanAccuracy.completedBlocksCount}/${dailyPlanAccuracy.blockCount} blocks)`
+                : 'No blocks scheduled today'}
+            </div>
+          </div>
+          <div className="mt-2 h-1.5 w-full rounded-full bg-[#ECECE7] dark:bg-[#1F2430] overflow-hidden">
+            <div
+              className="h-full rounded-full bg-emerald-600 dark:bg-emerald-400"
+              style={{ width: `${dailyPlanAccuracy.accuracyPercent}%` }}
+            />
+          </div>
+        </div>
+
+        {/* Daily Card 4: Today's Tasks Completed (Symmetrical 4th Card) */}
+        <div
+          data-testid="kpi-daily-tasks"
+          className="rounded-2xl bg-white dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834] p-4 flex flex-col justify-between"
+        >
+          <div>
+            <div className="flex items-center justify-between text-xs text-[#5A5A55] dark:text-[#9CA3AF]">
+              <span>Today&apos;s Tasks</span>
+              <CheckSquare className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+            </div>
+            <div className="font-mono tabular-nums text-2xl font-bold text-[#141413] dark:text-[#F3F4F6] mt-2">
+              {dailyTaskProgress.dueTodayCount > 0
+                ? `${dailyTaskProgress.completedDueTodayCount}/${dailyTaskProgress.dueTodayCount}`
+                : `${dailyTaskProgress.completedTodayCount} done`}
+            </div>
+            <div className="text-[11px] text-[#5A5A55] dark:text-[#9CA3AF] mt-1 font-mono tabular-nums">
+              {dailyTaskProgress.dueTodayCount > 0
+                ? `${dailyTaskProgress.completionPercent}% of due today · ${dailyTaskProgress.pendingBacklogCount} open`
+                : `No due tasks · ${dailyTaskProgress.pendingBacklogCount} open in backlog`}
+            </div>
+          </div>
+          <div className="mt-2 h-1.5 w-full rounded-full bg-[#ECECE7] dark:bg-[#1F2430] overflow-hidden">
+            <div
+              className="h-full rounded-full bg-sky-600 dark:bg-sky-400"
+              style={{ width: `${dailyTaskProgress.completionPercent}%` }}
             />
           </div>
         </div>
@@ -949,6 +1156,509 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
               </span>
             )}
           </div>
+        </section>
+      </div>
+
+      {/* 4b. Session Quality, Focus Rhythm & Goal Consistency (4 Symmetrical Cards) */}
+      <div
+        data-testid="extended-kpi-row"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4"
+      >
+        {/* Avg Focus Quality Rating */}
+        <div
+          data-testid="kpi-focus-quality"
+          className="rounded-2xl bg-white dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834] p-4 flex flex-col justify-between"
+        >
+          <div>
+            <div className="flex items-center justify-between text-xs text-[#5A5A55] dark:text-[#9CA3AF]">
+              <span>Avg Focus Quality</span>
+              <Star className="w-4 h-4 text-amber-500" />
+            </div>
+            <div className="font-mono tabular-nums text-2xl font-bold text-[#141413] dark:text-[#F3F4F6] mt-2">
+              {sessionQuality.totalSessions > 0 ? `${sessionQuality.avgRating.toFixed(1)} / 5` : '—'}
+            </div>
+            <div className="text-[11px] text-[#5A5A55] dark:text-[#9CA3AF] mt-1 font-mono tabular-nums">
+              {sessionQuality.totalSessions > 0
+                ? `Across ${sessionQuality.totalSessions} ${
+                    sessionQuality.totalSessions === 1 ? 'session' : 'sessions'
+                  }`
+                : 'No rated sessions yet'}
+            </div>
+          </div>
+          <div className="mt-2 grid grid-cols-5 gap-1">
+            {[1, 2, 3, 4, 5].map((step) => (
+              <div
+                key={step}
+                className={`h-1.5 rounded-full ${
+                  sessionQuality.avgRating >= step - 0.25 && sessionQuality.totalSessions > 0
+                    ? 'bg-amber-500'
+                    : 'bg-[#ECECE7] dark:bg-[#1F2430]'
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Session Length & Deep Work */}
+        <div
+          data-testid="kpi-session-depth"
+          className="rounded-2xl bg-white dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834] p-4 flex flex-col justify-between"
+        >
+          <div>
+            <div className="flex items-center justify-between text-xs text-[#5A5A55] dark:text-[#9CA3AF]">
+              <span>Avg Session Length</span>
+              <Timer className="w-4 h-4 text-[#4338CA] dark:text-[#818CF8]" />
+            </div>
+            <div className="font-mono tabular-nums text-2xl font-bold text-[#141413] dark:text-[#F3F4F6] mt-2">
+              {formatDurationLabel(sessionQuality.avgSessionMinutes)}
+            </div>
+            <div className="text-[11px] text-[#5A5A55] dark:text-[#9CA3AF] mt-1 font-mono tabular-nums">
+              Longest: {formatDurationLabel(sessionQuality.longestSessionMinutes)}
+            </div>
+          </div>
+          <div className="text-[11px] text-[#5A5A55] dark:text-[#9CA3AF] mt-1 font-mono tabular-nums">
+            {sessionQuality.deepSessionsCount} deep{' '}
+            {sessionQuality.deepSessionsCount === 1 ? 'session' : 'sessions'} (≥ 45m)
+          </div>
+        </div>
+
+        {/* 30-Day Goal Hit Rate & Personal Best Day */}
+        <div
+          data-testid="kpi-goal-consistency"
+          className="rounded-2xl bg-white dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834] p-4 flex flex-col justify-between"
+        >
+          <div>
+            <div className="flex items-center justify-between text-xs text-[#5A5A55] dark:text-[#9CA3AF]">
+              <span>30-Day Goal Hit Rate</span>
+              <Trophy className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <div className="font-mono tabular-nums text-2xl font-bold text-[#141413] dark:text-[#F3F4F6] mt-2">
+              {goalConsistency.goalHitDays30}/30d{' '}
+              <span className="text-sm font-semibold text-[#5A5A55] dark:text-[#9CA3AF]">
+                ({goalConsistency.goalHitPercent30}%)
+              </span>
+            </div>
+            <div className="text-[11px] text-[#5A5A55] dark:text-[#9CA3AF] mt-1 font-mono tabular-nums truncate">
+              {goalConsistency.bestDayDate
+                ? `Best: ${formatDurationLabel(goalConsistency.bestDayMinutes)} · ${new Date(
+                    `${goalConsistency.bestDayDate}T12:00:00`
+                  ).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`
+                : 'No study days logged yet'}
+            </div>
+          </div>
+          <div className="mt-2 h-1.5 w-full rounded-full bg-[#ECECE7] dark:bg-[#1F2430] overflow-hidden">
+            <div
+              className="h-full rounded-full bg-emerald-600 dark:bg-emerald-400"
+              style={{ width: `${goalConsistency.goalHitPercent30}%` }}
+            />
+          </div>
+        </div>
+
+        {/* Task Completion & Backlog Health */}
+        <div
+          data-testid="kpi-task-backlog"
+          className="rounded-2xl bg-white dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834] p-4 flex flex-col justify-between"
+        >
+          <div>
+            <div className="flex items-center justify-between text-xs text-[#5A5A55] dark:text-[#9CA3AF]">
+              <span>Task Backlog Health</span>
+              <ListTodo className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+            </div>
+            <div className="font-mono tabular-nums text-2xl font-bold text-[#141413] dark:text-[#F3F4F6] mt-2">
+              {taskBacklog.completionRatePercent}%
+            </div>
+            <div className="text-[11px] text-[#5A5A55] dark:text-[#9CA3AF] mt-1 font-mono tabular-nums">
+              {taskBacklog.completedCount}/{taskBacklog.totalCount} done · {taskBacklog.overdueCount}{' '}
+              overdue
+            </div>
+          </div>
+          <div className="text-[11px] text-[#5A5A55] dark:text-[#9CA3AF] mt-1 font-mono tabular-nums">
+            {taskBacklog.openCount} open ({formatDurationLabel(taskBacklog.backlogMinutesRemaining)}) ·{' '}
+            {taskBacklog.highPriorityOpenCount} high
+          </div>
+        </div>
+      </div>
+
+      {/* 4c. Weekday Study Rhythm & Focus Mode Mix */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Weekday Study Rhythm (Mon–Sun) */}
+        <section
+          data-testid="weekday-rhythm-section"
+          className="lg:col-span-6 rounded-2xl bg-white dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834] p-5 flex flex-col justify-between space-y-4"
+        >
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <h2 className="font-display text-base font-semibold text-[#141413] dark:text-[#F3F4F6]">
+                Day-of-Week Study Rhythm
+              </h2>
+              <p className="text-xs text-[#5A5A55] dark:text-[#9CA3AF]">
+                Total focus minutes by weekday (Mon–Sun)
+              </p>
+            </div>
+            {inspectedWeekday && inspectedWeekday.totalMinutes > 0 ? (
+              <span className="text-xs font-mono tabular-nums font-semibold text-[#4338CA] dark:text-[#A5B4FC]">
+                {inspectedWeekday.label}: {formatDurationLabel(inspectedWeekday.totalMinutes)} (avg{' '}
+                {formatDurationLabel(inspectedWeekday.avgMinutesPerActiveDay)})
+              </span>
+            ) : (
+              <span className="text-xs text-[#5A5A55] dark:text-[#9CA3AF]">No data yet</span>
+            )}
+          </div>
+
+          <div
+            className="h-40 flex items-end justify-between gap-2 pt-4 border-b border-[#E5E5E0] dark:border-[#232834] pb-2"
+            data-testid="weekday-rhythm-chart"
+          >
+            {weekdayRhythm.map((day) => {
+              const pct = Math.round((day.totalMinutes / maxWeekdayMinutes) * 100);
+              const isSelected = activeWeekdayIndex === day.weekdayIndex;
+              return (
+                <button
+                  key={day.label}
+                  type="button"
+                  onMouseEnter={() => setActiveWeekdayIndex(day.weekdayIndex)}
+                  onMouseLeave={() => setActiveWeekdayIndex(null)}
+                  onClick={() =>
+                    setActiveWeekdayIndex((prev) =>
+                      prev === day.weekdayIndex ? null : day.weekdayIndex
+                    )
+                  }
+                  aria-label={`${day.label}: ${formatDurationLabel(day.totalMinutes)}`}
+                  className="flex-1 h-full flex flex-col items-center justify-end gap-1.5 cursor-pointer group"
+                >
+                  <div className="w-full flex items-end justify-center h-28">
+                    <div
+                      style={{ height: `${Math.max(day.totalMinutes > 0 ? 8 : 3, pct)}%` }}
+                      className={`w-6 sm:w-8 rounded-t-md transition-all ${
+                        day.totalMinutes === 0
+                          ? 'bg-[#ECECE7] dark:bg-[#1F2430]'
+                          : day.isBest || isSelected
+                          ? 'bg-[#4338CA] dark:bg-[#6366F1]'
+                          : 'bg-[#A5B4FC] dark:bg-[#3730A3] group-hover:bg-[#6366F1]'
+                      }`}
+                    />
+                  </div>
+                  <span
+                    className={`text-[11px] font-medium ${
+                      day.isBest && day.totalMinutes > 0
+                        ? 'text-[#4338CA] dark:text-[#818CF8] font-bold'
+                        : 'text-[#5A5A55] dark:text-[#9CA3AF]'
+                    }`}
+                  >
+                    {day.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="text-xs text-[#5A5A55] dark:text-[#9CA3AF] flex flex-wrap items-center justify-between gap-2 tabular-nums">
+            <span>
+              Live Timer:{' '}
+              <strong className="font-mono text-[#141413] dark:text-[#F3F4F6]">
+                {formatDurationLabel(sessionQuality.liveMinutes)}
+              </strong>{' '}
+              ({sessionQuality.liveCount})
+            </span>
+            <span>
+              Manual Logs:{' '}
+              <strong className="font-mono text-[#141413] dark:text-[#F3F4F6]">
+                {formatDurationLabel(sessionQuality.manualMinutes)}
+              </strong>{' '}
+              ({sessionQuality.manualCount})
+            </span>
+          </div>
+        </section>
+
+        {/* Focus Mode & Method Breakdown */}
+        <section
+          data-testid="focus-mode-mix-section"
+          className="lg:col-span-6 rounded-2xl bg-white dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834] p-5 space-y-4"
+        >
+          <div>
+            <h2 className="font-display text-base font-semibold text-[#141413] dark:text-[#F3F4F6]">
+              Timer Mode &amp; Session Mix
+            </h2>
+            <p className="text-xs text-[#5A5A55] dark:text-[#9CA3AF]">
+              Time share and average focus rating across study modes
+            </p>
+          </div>
+
+          {sessionQuality.modeBreakdown.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-[#E5E5E0] dark:border-[#232834] p-6 text-center text-xs text-[#5A5A55] dark:text-[#9CA3AF]">
+              Complete or log study sessions to compare Pomodoro, Flowtime, Scheduled, and Manual sessions.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {sessionQuality.modeBreakdown.map((item) => (
+                <div key={item.mode} className="space-y-1">
+                  <div className="flex items-center justify-between gap-2 text-xs">
+                    <span className="font-semibold text-[#141413] dark:text-[#F3F4F6]">
+                      {item.label}{' '}
+                      <span className="font-normal text-[#5A5A55] dark:text-[#9CA3AF] tabular-nums">
+                        ({item.count} · ★ {item.avgRating.toFixed(1)})
+                      </span>
+                    </span>
+                    <span className="font-mono tabular-nums text-[#141413] dark:text-[#F3F4F6]">
+                      {formatDurationLabel(item.minutes)}{' '}
+                      <span className="text-[#5A5A55] dark:text-[#9CA3AF]">({item.percentage}%)</span>
+                    </span>
+                  </div>
+                  <div className="h-2 w-full rounded-full bg-[#ECECE7] dark:bg-[#1F2430] overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-[#4338CA] dark:bg-[#6366F1]"
+                      style={{ width: `${item.percentage}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
+
+      {/* 4d. A/L Past Paper Mistake Breakdown & Syllabus Confidence Depth */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Past Paper Performance & Mistake Breakdown */}
+        <section
+          data-testid="past-paper-analytics-section"
+          className="lg:col-span-6 rounded-2xl bg-white dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834] p-5 space-y-4"
+        >
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <h2 className="font-display text-base font-semibold text-[#141413] dark:text-[#F3F4F6]">
+                Past Paper Mastery &amp; Mistakes
+              </h2>
+              <p className="text-xs text-[#5A5A55] dark:text-[#9CA3AF] tabular-nums">
+                {paperAnalytics.paperCount} {paperAnalytics.paperCount === 1 ? 'paper' : 'papers'} ·{' '}
+                {paperAnalytics.attemptedQuestions}/{paperAnalytics.totalQuestions} questions attempted
+              </p>
+            </div>
+            <div className="flex items-center gap-1.5 font-mono tabular-nums text-sm font-bold text-[#141413] dark:text-[#F3F4F6]">
+              <FileText className="w-4 h-4 text-[#4338CA] dark:text-[#818CF8]" />
+              <span>{paperAnalytics.masteryRatePercent}% accuracy</span>
+            </div>
+          </div>
+
+          {paperAnalytics.totalQuestions === 0 ? (
+            <div className="rounded-xl border border-dashed border-[#E5E5E0] dark:border-[#232834] p-6 text-center text-xs text-[#5A5A55] dark:text-[#9CA3AF]">
+              Add past papers in the Past Papers tab to track mastered questions, conceptual redo gaps, and silly mistakes.
+            </div>
+          ) : (
+            <>
+              {/* Stacked Question Status Bar */}
+              <div className="space-y-2">
+                <div className="h-2.5 w-full rounded-full bg-[#ECECE7] dark:bg-[#1F2430] overflow-hidden flex">
+                  {paperAnalytics.masteredCount > 0 && (
+                    <div
+                      className="h-full bg-emerald-500"
+                      style={{
+                        width: `${(paperAnalytics.masteredCount / paperAnalytics.totalQuestions) * 100}%`,
+                      }}
+                    />
+                  )}
+                  {paperAnalytics.sillyCount > 0 && (
+                    <div
+                      className="h-full bg-amber-500"
+                      style={{
+                        width: `${(paperAnalytics.sillyCount / paperAnalytics.totalQuestions) * 100}%`,
+                      }}
+                    />
+                  )}
+                  {paperAnalytics.redoCount > 0 && (
+                    <div
+                      className="h-full bg-rose-500"
+                      style={{
+                        width: `${(paperAnalytics.redoCount / paperAnalytics.totalQuestions) * 100}%`,
+                      }}
+                    />
+                  )}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] font-mono tabular-nums text-[#5A5A55] dark:text-[#9CA3AF]">
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-xs bg-emerald-500" />
+                    Mastered: <strong className="text-[#141413] dark:text-[#F3F4F6]">{paperAnalytics.masteredCount}</strong>
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-xs bg-amber-500" />
+                    Silly: <strong className="text-[#141413] dark:text-[#F3F4F6]">{paperAnalytics.sillyCount}</strong>
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-xs bg-rose-500" />
+                    Redo: <strong className="text-[#141413] dark:text-[#F3F4F6]">{paperAnalytics.redoCount}</strong>
+                  </span>
+                  <span>
+                    Unattempted: {paperAnalytics.unattemptedCount}
+                  </span>
+                </div>
+              </div>
+
+              {/* Per-Subject Paper Accuracy */}
+              <div className="grid grid-cols-3 gap-2 pt-1">
+                {paperAnalytics.bySubject.map((sub) => (
+                  <div
+                    key={sub.subject}
+                    className="rounded-xl bg-[#F7F7F5] dark:bg-[#0B0D11] border border-[#E5E5E0] dark:border-[#232834] p-2.5 space-y-0.5"
+                  >
+                    <div className="flex items-center gap-1.5 text-[11px] font-medium text-[#5A5A55] dark:text-[#9CA3AF] truncate">
+                      <span
+                        className="w-2 h-2 rounded-xs shrink-0"
+                        style={{ backgroundColor: sub.color }}
+                      />
+                      <span className="truncate">{sub.label}</span>
+                    </div>
+                    <div className="font-mono tabular-nums text-xs font-bold text-[#141413] dark:text-[#F3F4F6]">
+                      {sub.attempted > 0 ? `${sub.masteryRatePercent}%` : '—'}
+                    </div>
+                    <div className="font-mono tabular-nums text-[10px] text-[#5A5A55] dark:text-[#9CA3AF]">
+                      {sub.redo} redo · {sub.silly} silly
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Weakest Tagged Units */}
+              {paperAnalytics.topWeakUnits.length > 0 && (
+                <div className="pt-2 border-t border-[#E5E5E0] dark:border-[#232834] space-y-1.5">
+                  <div className="text-[11px] font-semibold text-[#141413] dark:text-[#F3F4F6]">
+                    Most Flagged Units (Redo &amp; Silly Mistakes)
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                    {paperAnalytics.topWeakUnits.map((unit) => (
+                      <div
+                        key={`${unit.subject}_${unit.unitTag}`}
+                        className="flex items-center justify-between gap-2 rounded-lg bg-[#F7F7F5] dark:bg-[#0B0D11] px-2.5 py-1.5 text-[11px]"
+                      >
+                        <span className="truncate font-medium text-[#141413] dark:text-[#F3F4F6]">
+                          {unit.unitTag}
+                        </span>
+                        <span className="font-mono tabular-nums text-[#5A5A55] dark:text-[#9CA3AF] shrink-0">
+                          {unit.redoCount}R · {unit.sillyCount}S
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </section>
+
+        {/* Syllabus Depth, Confidence & Exam Pace */}
+        <section
+          data-testid="syllabus-depth-section"
+          className="lg:col-span-6 rounded-2xl bg-white dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834] p-5 space-y-4"
+        >
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <h2 className="font-display text-base font-semibold text-[#141413] dark:text-[#F3F4F6]">
+                Syllabus Depth &amp; Confidence
+              </h2>
+              <p className="text-xs text-[#5A5A55] dark:text-[#9CA3AF] tabular-nums">
+                {syllabusDepth.revised + syllabusDepth.mastered}/{syllabusDepth.totalSubtopics} revised
+                or mastered · {syllabusDepth.totalRevisions} revisions logged
+              </p>
+            </div>
+            <div className="flex items-center gap-1.5 font-mono tabular-nums text-sm font-bold text-[#141413] dark:text-[#F3F4F6]">
+              <BookOpen className="w-4 h-4 text-[#4338CA] dark:text-[#818CF8]" />
+              <span>★ {syllabusDepth.avgConfidence.toFixed(1)}/5</span>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {syllabusDepth.bySubject.map((sy) => {
+              const total = Math.max(1, sy.total);
+              return (
+                <div key={sy.subject} className="space-y-1.5">
+                  <div className="flex items-center justify-between gap-2 text-xs">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span
+                        className="w-2.5 h-2.5 rounded-xs shrink-0"
+                        style={{ backgroundColor: sy.color }}
+                      />
+                      <span className="font-semibold text-[#141413] dark:text-[#F3F4F6] truncate">
+                        {sy.label}
+                      </span>
+                      <span className="text-[11px] font-mono tabular-nums text-[#5A5A55] dark:text-[#9CA3AF]">
+                        ★ {sy.avgConfidence.toFixed(1)} · {sy.totalRevisions} rev
+                      </span>
+                    </div>
+                    <span className="font-mono tabular-nums text-[#141413] dark:text-[#F3F4F6] shrink-0">
+                      {sy.progressPercent}%{' '}
+                      <span className="text-[#5A5A55] dark:text-[#9CA3AF]">
+                        ({sy.mastered}M / {sy.revised}R / {sy.learning}L)
+                      </span>
+                    </span>
+                  </div>
+                  <div className="h-2 w-full rounded-full bg-[#ECECE7] dark:bg-[#1F2430] overflow-hidden flex">
+                    {sy.mastered > 0 && (
+                      <div
+                        className="h-full bg-emerald-500"
+                        style={{ width: `${(sy.mastered / total) * 100}%` }}
+                      />
+                    )}
+                    {sy.revised > 0 && (
+                      <div
+                        className="h-full bg-sky-500"
+                        style={{ width: `${(sy.revised / total) * 100}%` }}
+                      />
+                    )}
+                    {sy.learning > 0 && (
+                      <div
+                        className="h-full bg-amber-400"
+                        style={{ width: `${(sy.learning / total) * 100}%` }}
+                      />
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono tabular-nums text-[#5A5A55] dark:text-[#9CA3AF] pt-1">
+            <span>
+              Low-confidence topics (★ ≤ 2):{' '}
+              <strong className="text-[#141413] dark:text-[#F3F4F6]">
+                {syllabusDepth.lowConfidenceCount}
+              </strong>
+            </span>
+            <span>
+              Not started:{' '}
+              <strong className="text-[#141413] dark:text-[#F3F4F6]">
+                {syllabusDepth.notStarted}
+              </strong>
+            </span>
+          </div>
+
+          {examCountdowns.length > 0 && (
+            <div className="pt-2 border-t border-[#E5E5E0] dark:border-[#232834] space-y-1.5">
+              <div className="text-[11px] font-semibold text-[#141413] dark:text-[#F3F4F6]">
+                Exam Pace Projection (at {formatDurationLabel(rolling7.averageMinutes)}/day avg)
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                {examCountdowns.slice(0, 4).map((ex) => {
+                  const daysLeft = Math.max(0, daysUntilISO(ex.date));
+                  const projectedHours = Math.round(
+                    (daysLeft * rolling7.averageMinutes) / 60
+                  );
+                  return (
+                    <div
+                      key={ex.id}
+                      className="flex items-center justify-between gap-2 rounded-lg bg-[#F7F7F5] dark:bg-[#0B0D11] px-2.5 py-1.5 text-[11px]"
+                    >
+                      <span className="truncate font-medium text-[#141413] dark:text-[#F3F4F6]">
+                        {ex.title}
+                      </span>
+                      <span className="font-mono tabular-nums text-[#4338CA] dark:text-[#A5B4FC] shrink-0">
+                        {daysLeft}d · ~{projectedHours}h
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </section>
       </div>
 

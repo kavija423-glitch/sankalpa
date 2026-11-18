@@ -916,6 +916,7 @@ export default function App() {
                 syllabus={state.syllabus}
                 subjects={state.subjects}
                 dailyGoalMinutes={state.settings.dailyGoalMinutes}
+                examCountdowns={state.examCountdowns}
                 onOpenLogSession={openNewManualSession}
                 onEditManualSession={openEditManualSession}
               />
