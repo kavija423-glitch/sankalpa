@@ -6,6 +6,8 @@ import {
   CheckSquare,
   FileText,
   Moon,
+  PanelLeftClose,
+  PanelLeftOpen,
   Settings,
   Sun,
   Timer,
@@ -86,6 +88,21 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<NavTab>('calendar');
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [showLogModal, setShowLogModal] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('sankalpa_sidebar_collapsed') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('sankalpa_sidebar_collapsed', String(sidebarCollapsed));
+    } catch {
+      // Ignore storage errors
+    }
+  }, [sidebarCollapsed]);
 
   // Firebase optional sync state
   const firebaseRef = useRef<FirebaseHandle | null>(null);
@@ -593,21 +610,54 @@ export default function App() {
 
   return (
     <div className="h-dvh w-full flex flex-col md:flex-row overflow-hidden bg-[#F7F7F5] dark:bg-[#0B0D11] text-[#141413] dark:text-[#F3F4F6]">
-      {/* Desktop Left Sidebar */}
-      <aside className="hidden md:flex md:w-60 shrink-0 flex-col border-r border-[#E5E5E0] dark:border-[#232834] bg-white dark:bg-[#13161D]">
-        <div className="px-5 py-4 border-b border-[#E5E5E0] dark:border-[#232834] flex items-center justify-between">
-          <BrandLogo />
-          <button
-            type="button"
-            onClick={toggleTheme}
-            aria-label={state.settings.theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
-            className="p-2 rounded-lg text-[#5A5A55] dark:text-[#9CA3AF] hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
-          >
-            {state.settings.theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-          </button>
+      {/* Desktop Collapsible Left Sidebar */}
+      <aside
+        data-collapsed={sidebarCollapsed ? 'true' : 'false'}
+        className={`hidden md:flex shrink-0 flex-col border-r border-[#E5E5E0] dark:border-[#232834] bg-white dark:bg-[#13161D] transition-[width] duration-200 ease-out overflow-hidden ${
+          sidebarCollapsed ? 'md:w-[68px]' : 'md:w-60'
+        }`}
+      >
+        <div
+          className={`border-b border-[#E5E5E0] dark:border-[#232834] flex ${
+            sidebarCollapsed
+              ? 'flex-col items-center gap-2 py-3 px-2'
+              : 'items-center justify-between px-4 py-4'
+          }`}
+        >
+          <BrandLogo compact={sidebarCollapsed} iconOnly={sidebarCollapsed} />
+          <div className={`flex items-center ${sidebarCollapsed ? 'flex-col gap-1' : 'gap-0.5'}`}>
+            <button
+              type="button"
+              onClick={toggleTheme}
+              aria-label={state.settings.theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+              title={state.settings.theme === 'dark' ? 'Light theme' : 'Dark theme'}
+              className="p-2 rounded-lg text-[#5A5A55] dark:text-[#9CA3AF] hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
+            >
+              {state.settings.theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
+            <button
+              type="button"
+              onClick={() => setSidebarCollapsed((v) => !v)}
+              aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              aria-expanded={!sidebarCollapsed}
+              title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              className="p-2 rounded-lg text-[#5A5A55] dark:text-[#9CA3AF] hover:bg-black/5 dark:hover:bg-white/5 hover:text-[#141413] dark:hover:text-[#F3F4F6] cursor-pointer"
+            >
+              {sidebarCollapsed ? (
+                <PanelLeftOpen className="w-4 h-4" />
+              ) : (
+                <PanelLeftClose className="w-4 h-4" />
+              )}
+            </button>
+          </div>
         </div>
 
-        <nav className="flex-1 min-h-0 overflow-y-auto px-3 py-4 space-y-1" aria-label="Main workspace navigation">
+        <nav
+          className={`flex-1 min-h-0 overflow-y-auto py-4 space-y-1 ${
+            sidebarCollapsed ? 'px-2' : 'px-3'
+          }`}
+          aria-label="Main workspace navigation"
+        >
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
             const active = activeTab === item.id;
@@ -617,25 +667,36 @@ export default function App() {
                 type="button"
                 onClick={() => setActiveTab(item.id)}
                 aria-current={active ? 'page' : undefined}
-                className={`w-full px-3 py-2.5 rounded-xl text-sm font-medium flex items-center gap-3 cursor-pointer whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4338CA] ${
+                aria-label={item.label}
+                title={sidebarCollapsed ? item.label : undefined}
+                className={`w-full py-2.5 rounded-xl text-sm font-medium flex items-center cursor-pointer whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4338CA] ${
+                  sidebarCollapsed ? 'justify-center px-0' : 'gap-3 px-3'
+                } ${
                   active
                     ? 'bg-[#4338CA]/10 dark:bg-[#6366F1]/15 text-[#4338CA] dark:text-[#A5B4FC] font-semibold'
                     : 'text-[#5A5A55] dark:text-[#9CA3AF] hover:bg-black/5 dark:hover:bg-white/5 hover:text-[#141413] dark:hover:text-[#F3F4F6]'
                 }`}
               >
                 <Icon className="w-4 h-4 shrink-0" />
-                <span>{item.label}</span>
+                {!sidebarCollapsed && <span>{item.label}</span>}
               </button>
             );
           })}
         </nav>
 
-        <div className="p-4 border-t border-[#E5E5E0] dark:border-[#232834] space-y-2.5">
-          <PWAInstallButton variant="sidebar" />
+        <div
+          className={`border-t border-[#E5E5E0] dark:border-[#232834] space-y-2.5 empty:hidden ${
+            sidebarCollapsed ? 'p-2 flex flex-col items-center' : 'p-4'
+          }`}
+        >
+          <PWAInstallButton variant={sidebarCollapsed ? 'icon' : 'sidebar'} />
           {!isOnline && (
-            <div className="flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400">
+            <div
+              title="Offline mode active"
+              className="flex items-center justify-center gap-2 text-xs text-amber-600 dark:text-amber-400"
+            >
               <WifiOff className="w-3.5 h-3.5 shrink-0" />
-              <span>Offline mode active</span>
+              {!sidebarCollapsed && <span>Offline mode active</span>}
             </div>
           )}
         </div>

@@ -3,7 +3,7 @@ import { Download, Share, X } from 'lucide-react';
 import { usePWAInstall } from '../hooks/usePWAInstall';
 
 interface PWAInstallButtonProps {
-  variant?: 'sidebar' | 'compact';
+  variant?: 'sidebar' | 'compact' | 'icon';
 }
 
 export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({ variant = 'sidebar' }) => {
@@ -19,14 +19,18 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({ variant = 's
       <button
         type="button"
         onClick={() => void install()}
+        aria-label="Install Sankalpa app"
+        title="Install App"
         className={`flex items-center justify-center gap-2 rounded-lg bg-[#4338CA] text-white hover:bg-[#3730A3] dark:bg-[#6366F1] dark:hover:bg-[#4F46E5] transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
           variant === 'sidebar'
             ? 'w-full px-3.5 py-2.5 text-xs font-semibold'
+            : variant === 'icon'
+            ? 'w-10 h-10 p-0 text-xs font-semibold'
             : 'px-3 py-1.5 text-xs font-semibold min-h-[40px]'
         }`}
       >
         <Download className="w-3.5 h-3.5 shrink-0" />
-        <span>Install App</span>
+        {variant !== 'icon' && <span>Install App</span>}
       </button>
     );
   }
@@ -37,14 +41,18 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({ variant = 's
         <button
           type="button"
           onClick={() => setShowGuide(true)}
+          aria-label="Install Sankalpa on iOS"
+          title="Install on iOS"
           className={`flex items-center justify-center gap-2 rounded-lg border border-[#E5E5E0] dark:border-[#232834] text-[#141413] dark:text-[#F3F4F6] hover:bg-black/5 dark:hover:bg-white/5 transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
             variant === 'sidebar'
               ? 'w-full px-3.5 py-2.5 text-xs font-medium'
+              : variant === 'icon'
+              ? 'w-10 h-10 p-0 text-xs font-medium'
               : 'px-3 py-1.5 text-xs font-medium min-h-[40px]'
           }`}
         >
           <Share className="w-3.5 h-3.5 shrink-0" />
-          <span>Install on iOS</span>
+          {variant !== 'icon' && <span>Install on iOS</span>}
         </button>
 
         {showGuide && (

@@ -2,9 +2,10 @@ import React from 'react';
 
 interface BrandLogoProps {
   compact?: boolean;
+  iconOnly?: boolean;
 }
 
-export const BrandLogo: React.FC<BrandLogoProps> = ({ compact = false }) => {
+export const BrandLogo: React.FC<BrandLogoProps> = ({ compact = false, iconOnly = false }) => {
   return (
     <div className="flex items-center gap-2.5 select-none">
       <svg
@@ -41,9 +42,11 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({ compact = false }) => {
         />
         <circle cx="256" cy="98" r="18" fill="#F59E0B" />
       </svg>
-      <span className="font-display text-lg font-bold tracking-tight text-[#141413] dark:text-[#F3F4F6] whitespace-nowrap shrink-0">
-        Sankalpa
-      </span>
+      {!iconOnly && (
+        <span className="font-display text-lg font-bold tracking-tight text-[#141413] dark:text-[#F3F4F6] whitespace-nowrap shrink-0">
+          Sankalpa
+        </span>
+      )}
     </div>
   );
 };
