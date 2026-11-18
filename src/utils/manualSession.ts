@@ -277,6 +277,45 @@ export function buildManualStudySession(
   };
 }
 
+export function updateExistingStudySession(
+  existingSession: StudySession,
+  input: {
+    subject: SubjectKey;
+    title: string;
+    taskId: string | null;
+    date: string;
+    startMinutes: number;
+    endMinutes: number;
+    notes: string;
+  },
+  subjects: Record<SubjectKey, SubjectConfig>,
+  nowMs: number = Date.now()
+): StudySession {
+  const subjectConfig = subjects[input.subject] ?? subjects.general;
+  const durationMinutes = Math.max(1, input.endMinutes - input.startMinutes);
+  const startTimestamp = combineDateAndMinutesLocal(input.date, input.startMinutes);
+  const endTimestamp = combineDateAndMinutesLocal(input.date, input.endMinutes);
+  const resolvedTitle = input.title.trim() || subjectConfig.label;
+
+  return {
+    ...existingSession,
+    title: resolvedTitle,
+    subject: input.subject,
+    date: input.date,
+    startTimestamp,
+    endTimestamp,
+    durationMinutes,
+    notes: input.notes.trim(),
+    taskId: input.taskId ?? null,
+    subjectId: input.subject,
+    subjectName: subjectConfig.label,
+    startTime: new Date(startTimestamp).toISOString(),
+    endTime: new Date(endTimestamp).toISOString(),
+    durationSeconds: durationMinutes * 60,
+    updatedAt: nowMs,
+  };
+}
+
 export function draftFromExistingManualSession(
   session: StudySession
 ): ManualSessionDraft {

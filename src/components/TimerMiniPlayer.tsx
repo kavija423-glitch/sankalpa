@@ -25,14 +25,14 @@ interface TimerMiniPlayerProps {
   timer: ActiveTimerState;
   elapsedMs: number;
   subjects: Record<SubjectKey, SubjectConfig>;
-  isPipSupported: boolean;
-  isPipOpen: boolean;
-  pipError: string | null;
+  isPipSupported?: boolean;
+  isPipOpen?: boolean;
+  pipError?: string | null;
   onToggleRun: () => void;
   onRequestStop: () => void;
   onOpenTimer: () => void;
-  onTogglePip: () => void;
-  onDismissPipError: () => void;
+  onTogglePip?: () => void;
+  onDismissPipError?: () => void;
 }
 
 const CORNER_POSITION_CLASSES: Record<FloatingCorner, string> = {
@@ -46,14 +46,14 @@ export const TimerMiniPlayer: React.FC<TimerMiniPlayerProps> = ({
   timer,
   elapsedMs,
   subjects,
-  isPipSupported,
-  isPipOpen,
-  pipError,
+  isPipSupported = false,
+  isPipOpen = false,
+  pipError = null,
   onToggleRun,
   onRequestStop,
   onOpenTimer,
-  onTogglePip,
-  onDismissPipError,
+  onTogglePip = () => {},
+  onDismissPipError = () => {},
 }) => {
   const hasProgress = timer.isRunning || timer.accumulatedMs > 0;
 

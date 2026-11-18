@@ -8,7 +8,39 @@ import {
   formatClockTimer,
   computeOverlapLayout,
   getWeekDaysISO,
+  mergeRecordedSessionsForCalendar,
 } from './calendarMath';
+import type { StudySession } from '../types/app';
+
+function makeSession(
+  id: string,
+  startHour: number,
+  startMin: number,
+  durationMinutes: number,
+  subject: StudySession['subject'] = 'physics',
+  deletedAt?: number
+): StudySession {
+  const startDt = new Date(2026, 10, 18, startHour, startMin, 0, 0);
+  const startTimestamp = startDt.getTime();
+  const endTimestamp = startTimestamp + durationMinutes * 60_000;
+  return {
+    id,
+    title: `Session ${id}`,
+    subject,
+    mode: 'pomodoro_25',
+    date: '2026-11-18',
+    startTimestamp,
+    endTimestamp,
+    durationMinutes,
+    rating: 4,
+    notes: '',
+    taskId: null,
+    blockId: null,
+    isManual: false,
+    updatedAt: startTimestamp,
+    ...(deletedAt ? { deletedAt } : {}),
+  };
+}
 
 test('snaps minutes to 15-minute increments within 00:00-23:45', () => {
   assert.equal(snapMinutes(368), 375); // 06:08 -> 06:15
@@ -63,3 +95,42 @@ test('returns 7 Monday-Sunday ISO dates for a week', () => {
   assert.equal(days[0], '2026-11-16'); // Monday
   assert.equal(days[6], '2026-11-22'); // Sunday
 });
+
+test('mergeRecordedSessionsForCalendar merges adjacent (<=15m) and overlapping sessions chronologically', () => {
+  // Out-of-order input: 24m (10:25-10:49), 4m (10:00-10:04), 13m (10:06-10:19)
+  // Plus a session 16m later (11:05-11:20) that stays separate, and a soft-deleted session ignored
+  const s1 = makeSession('s1', 10, 0, 4, 'physics');
+  const s2 = makeSession('s2', 10, 6, 13, 'ict');
+  const s3 = makeSession('s3', 10, 25, 24, 'ict');
+  const s4 = makeSession('s4', 11, 5, 15, 'maths'); // gap = 16m > 15m
+  const sDeleted = makeSession('sDel', 10, 10, 20, 'physics', Date.now());
+
+  const groups = mergeRecordedSessionsForCalendar([s3, s4, s1, sDeleted, s2], 15);
+  assert.equal(groups.length, 2);
+
+  // Group 1: 10:00 -> 10:49, combined duration = 4 + 13 + 24 = 41m, primary subject = ict (37m vs 4m)
+  assert.equal(groups[0].startMinutes, 600);
+  assert.equal(groups[0].endMinutes, 649);
+  assert.equal(groups[0].spanMinutes, 49);
+  assert.equal(groups[0].totalDurationMinutes, 41);
+  assert.equal(groups[0].primarySubject, 'ict');
+  assert.deepEqual(
+    groups[0].sessions.map((s) => s.id),
+    ['s1', 's2', 's3']
+  );
+
+  // Group 2: 11:05 -> 11:20
+  assert.equal(groups[1].startMinutes, 665);
+  assert.equal(groups[1].totalDurationMinutes, 15);
+  assert.equal(groups[1].sessions.length, 1);
+
+  // Overlapping sessions merge and compute earliest start to latest end
+  const o1 = makeSession('o1', 14, 0, 20, 'maths');
+  const o2 = makeSession('o2', 14, 10, 25, 'maths');
+  const overlapGroups = mergeRecordedSessionsForCalendar([o2, o1], 15);
+  assert.equal(overlapGroups.length, 1);
+  assert.equal(overlapGroups[0].startMinutes, 840);
+  assert.equal(overlapGroups[0].endMinutes, 875);
+  assert.equal(overlapGroups[0].totalDurationMinutes, 45);
+});
+

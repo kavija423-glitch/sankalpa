@@ -4,6 +4,7 @@ import {
   ChevronRight,
   Eye,
   EyeOff,
+  Pencil,
   Play,
   Plus,
   Trash2,
@@ -31,9 +32,11 @@ import {
   formatTime24,
   getWeekDaysISO,
   isOffPeakHour,
+  mergeRecordedSessionsForCalendar,
   snapEdgeMinutes,
   snapMinutes,
 } from '../utils/calendarMath';
+import { minutesToHHMM, parseHHMMToMinutes } from '../utils/manualSession';
 import { addDaysISO, toISODateLocal } from '../utils/nlpTaskParser';
 
 interface CalendarViewProps {
@@ -49,6 +52,19 @@ interface CalendarViewProps {
   onStartTimerFromBlock: (block: CalendarBlock) => void;
   onOpenLogSession: () => void;
   onEditManualSession: (session: StudySession) => void;
+  onUpdateSession: (
+    sessionId: string,
+    input: {
+      subject: SubjectKey;
+      title: string;
+      taskId: string | null;
+      date: string;
+      startMinutes: number;
+      endMinutes: number;
+      notes: string;
+    }
+  ) => void;
+  onDeleteSession: (sessionId: string) => void;
 }
 
 interface ActiveDragPayload {
@@ -92,6 +108,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   onStartTimerFromBlock,
   onOpenLogSession,
   onEditManualSession,
+  onUpdateSession,
+  onDeleteSession,
 }) => {
   const todayISO = toISODateLocal(new Date());
   const [anchorDate, setAnchorDate] = useState(todayISO);
@@ -138,6 +156,21 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     taskId: string | null;
   } | null>(null);
 
+  // Breakdown Modal state for inspecting merged Actual recorded sessions
+  const [inspectedActualIds, setInspectedActualIds] = useState<string[] | null>(null);
+  const [editingActualSession, setEditingActualSession] = useState<{
+    id: string;
+    title: string;
+    subject: SubjectKey;
+    taskId: string | null;
+    date: string;
+    startTime: string;
+    endTime: string;
+    notes: string;
+    error: string | null;
+  } | null>(null);
+  const [confirmDeleteSessionId, setConfirmDeleteSessionId] = useState<string | null>(null);
+
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const hasScrolledRef = useRef(false);
 
@@ -166,6 +199,24 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     () => tasks.filter((t) => !t.deletedAt && !t.completed && !t.scheduledBlockId),
     [tasks]
   );
+
+  const taskById = useMemo(() => new Map(tasks.map((t) => [t.id, t])), [tasks]);
+
+  const inspectedSessions = useMemo(() => {
+    if (!inspectedActualIds || inspectedActualIds.length === 0) return [];
+    const idSet = new Set(inspectedActualIds);
+    return sessions
+      .filter((s) => !s.deletedAt && idSet.has(s.id))
+      .sort((a, b) => a.startTimestamp - b.startTimestamp || a.endTimestamp - b.endTimestamp);
+  }, [inspectedActualIds, sessions]);
+
+  useEffect(() => {
+    if (inspectedActualIds && inspectedSessions.length === 0) {
+      setInspectedActualIds(null);
+      setEditingActualSession(null);
+      setConfirmDeleteSessionId(null);
+    }
+  }, [inspectedActualIds, inspectedSessions.length]);
 
   // Current time indicator minutes
   const [nowMinutes, setNowMinutes] = useState(() => {
@@ -793,20 +844,21 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                   });
                 const laidOutManualSessions = computeOverlapLayout(dayManualSpans);
 
-                const daySessions = showGhostOverlay
-                  ? activeDaySessions
-                      .filter((s) => !s.isManual)
-                      .map((s) => {
-                        const dt = new Date(s.startTimestamp);
-                        const startMinutes = dt.getHours() * 60 + dt.getMinutes();
-                        return {
-                          id: s.id,
-                          startMinutes,
-                          durationMinutes: Math.max(15, s.durationMinutes),
-                          session: s,
-                        };
-                      })
+                const mergedActualGroups = showGhostOverlay
+                  ? mergeRecordedSessionsForCalendar(
+                      activeDaySessions.filter((s) => !s.isManual),
+                      15
+                    )
                   : [];
+
+                const laidOutActualGroups = computeOverlapLayout(
+                  mergedActualGroups.map((g) => ({
+                    id: g.id,
+                    startMinutes: g.startMinutes,
+                    durationMinutes: Math.max(30, g.spanMinutes),
+                    group: g,
+                  }))
+                );
 
                 const isToday = iso === todayISO;
                 const colDropPreview = dropPreview && dropPreview.date === iso ? dropPreview : null;
@@ -898,28 +950,63 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                       </div>
                     )}
 
-                    {/* Planned vs Actual Ghost Overlay (Actual Logged Sessions in dedicated right lane) */}
-                    {daySessions.map(({ id, startMinutes, durationMinutes, session }) => {
-                      const sub = subjects[session.subject] ?? subjects.general;
-                      const top = (startMinutes / 60) * HOUR_HEIGHT;
-                      const height = Math.max(20, (durationMinutes / 60) * HOUR_HEIGHT);
+                    {/* Planned vs Actual Ghost Overlay (Merged Recorded Sessions) */}
+                    {laidOutActualGroups.map(({ item: ag, column, totalColumns }) => {
+                      const g = ag.group;
+                      const sub = subjects[g.primarySubject] ?? subjects.general;
+                      const top = (g.startMinutes / 60) * HOUR_HEIGHT;
+                      const height = Math.max(26, (g.spanMinutes / 60) * HOUR_HEIGHT);
+                      const overlapsPlanned = dayBlocks.some(
+                        (blk) =>
+                          blk.startMinutes < g.endMinutes &&
+                          blk.startMinutes + blk.durationMinutes > g.startMinutes
+                      );
+                      const laneWidth = overlapsPlanned ? 47 / totalColumns : 96 / totalColumns;
+                      const laneLeft = overlapsPlanned ? 51 + column * laneWidth : 2 + column * laneWidth;
+                      const labelText = `Actual • ${formatDurationLabel(g.totalDurationMinutes)}${
+                        g.sessions.length > 1 ? ` (${g.sessions.length} sessions)` : ''
+                      }`;
+
                       return (
-                        <div
-                          key={`ghost_${id}`}
+                        <button
+                          key={`ghost_${g.id}`}
+                          type="button"
+                          data-calendar-block="true"
                           data-testid="calendar-ghost-session"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setInspectedActualIds(g.sessions.map((s) => s.id));
+                            setEditingActualSession(null);
+                            setConfirmDeleteSessionId(null);
+                          }}
                           style={{
                             top: `${top}px`,
                             height: `${height}px`,
+                            left: `${laneLeft}%`,
+                            width: `${laneWidth - 1}%`,
                             borderColor: sub.color,
-                            backgroundColor: `${sub.color}18`,
+                            backgroundColor: `${sub.color}1C`,
                           }}
-                          title={`Actual: ${session.title} (${session.durationMinutes}m)`}
-                          className="absolute right-1 left-[59%] z-10 rounded-md border border-dashed px-1.5 py-0.5 pointer-events-none overflow-hidden"
+                          title={`${labelText} (${formatTime24(g.startMinutes)}–${formatTime24(g.endMinutes)}) — Click to inspect`}
+                          className={`absolute z-15 rounded-md border border-dashed px-1.5 text-left overflow-hidden cursor-pointer hover:brightness-95 transition-all flex flex-col ${
+                            height >= 42 ? 'py-1 justify-start' : 'py-0.5 justify-center'
+                          }`}
                         >
-                          <div className="text-[10px] font-mono font-semibold truncate" style={{ color: sub.color }}>
-                            Actual · {session.durationMinutes}m
+                          <div
+                            className="text-[10px] font-mono font-semibold truncate leading-tight"
+                            style={{ color: sub.color }}
+                          >
+                            {labelText}
                           </div>
-                        </div>
+                          {height >= 42 && (
+                            <div
+                              className="text-[9px] font-mono tabular-nums truncate opacity-80 mt-0.5 leading-tight"
+                              style={{ color: sub.color }}
+                            >
+                              {formatTime24(g.startMinutes)} – {formatTime24(g.endMinutes)}
+                            </div>
+                          )}
+                        </button>
                       );
                     })}
 
@@ -935,7 +1022,16 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                           blk.startMinutes < ms.startMinutes + ms.durationMinutes &&
                           blk.startMinutes + blk.durationMinutes > ms.startMinutes
                       );
-                      const laneWidth = overlapsPlanned ? 39 / totalColumns : 96 / totalColumns;
+                      const overlapsActual = mergedActualGroups.some(
+                        (g) =>
+                          g.startMinutes < ms.startMinutes + ms.durationMinutes &&
+                          g.endMinutes > ms.startMinutes
+                      );
+                      const laneWidth = overlapsPlanned
+                        ? 39 / totalColumns
+                        : overlapsActual
+                          ? 55 / totalColumns
+                          : 96 / totalColumns;
                       const laneLeft = overlapsPlanned ? 59 + column * laneWidth : 2 + column * laneWidth;
 
                       return (
@@ -997,17 +1093,17 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                       const top = (blk.startMinutes / 60) * HOUR_HEIGHT;
                       const height = Math.max(24, (blk.durationMinutes / 60) * HOUR_HEIGHT);
                       const hasGhostOverlap =
-                        daySessions.some(
-                          (gs) =>
-                            gs.startMinutes < blk.startMinutes + blk.durationMinutes &&
-                            gs.startMinutes + gs.durationMinutes > blk.startMinutes
+                        mergedActualGroups.some(
+                          (g) =>
+                            g.startMinutes < blk.startMinutes + blk.durationMinutes &&
+                            g.endMinutes > blk.startMinutes
                         ) ||
                         dayManualSpans.some(
                           (ms) =>
                             ms.startMinutes < blk.startMinutes + blk.durationMinutes &&
                             ms.startMinutes + ms.durationMinutes > blk.startMinutes
                         );
-                      const widthPct = hasGhostOverlap ? 55 / totalColumns : 96 / totalColumns;
+                      const widthPct = hasGhostOverlap ? 48 / totalColumns : 96 / totalColumns;
                       const leftPct = 2 + column * widthPct;
                       const isBeingDragged =
                         activeDrag?.kind === 'block' && activeDrag.id === blk.id;
@@ -1440,6 +1536,408 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           </form>
         </div>
       )}
+
+      {/* Actual Recorded Sessions Breakdown Modal */}
+      {inspectedActualIds && inspectedSessions.length > 0 && (() => {
+        const firstStartDt = new Date(inspectedSessions[0].startTimestamp);
+        const groupStartMin = firstStartDt.getHours() * 60 + firstStartDt.getMinutes();
+        const latestEndMs = inspectedSessions.reduce(
+          (maxEnd, s) => Math.max(maxEnd, s.endTimestamp, s.startTimestamp + s.durationMinutes * 60_000),
+          inspectedSessions[0].endTimestamp
+        );
+        const spanMins = Math.max(
+          1,
+          Math.round((latestEndMs - inspectedSessions[0].startTimestamp) / 60_000)
+        );
+        const groupEndMin = Math.min(1440, groupStartMin + spanMins);
+        const totalDurationMins = inspectedSessions.reduce((sum, s) => sum + s.durationMinutes, 0);
+
+        const startEditingSession = (ses: StudySession) => {
+          const sDt = new Date(ses.startTimestamp);
+          const eDt = new Date(ses.endTimestamp);
+          const sMin = sDt.getHours() * 60 + sDt.getMinutes();
+          const eMin = Math.max(sMin + 1, eDt.getHours() * 60 + eDt.getMinutes());
+          setConfirmDeleteSessionId(null);
+          setEditingActualSession({
+            id: ses.id,
+            title: ses.title,
+            subject: ses.subject,
+            taskId: ses.taskId ?? null,
+            date: ses.date,
+            startTime: minutesToHHMM(sMin),
+            endTime: minutesToHHMM(eMin),
+            notes: ses.notes ?? '',
+            error: null,
+          });
+        };
+
+        const handleSaveSessionEdit = (e: React.FormEvent) => {
+          e.preventDefault();
+          if (!editingActualSession) return;
+          if (!editingActualSession.date || editingActualSession.date > todayISO) {
+            setEditingActualSession({
+              ...editingActualSession,
+              error: 'Date cannot be in the future.',
+            });
+            return;
+          }
+          const sMin = parseHHMMToMinutes(editingActualSession.startTime);
+          const eMin = parseHHMMToMinutes(editingActualSession.endTime);
+          if (sMin === null || eMin === null || eMin <= sMin) {
+            setEditingActualSession({
+              ...editingActualSession,
+              error: 'End time must be after Start time.',
+            });
+            return;
+          }
+
+          onUpdateSession(editingActualSession.id, {
+            subject: editingActualSession.subject,
+            title: editingActualSession.title,
+            taskId: editingActualSession.taskId,
+            date: editingActualSession.date,
+            startMinutes: sMin,
+            endMinutes: eMin,
+            notes: editingActualSession.notes,
+          });
+          setEditingActualSession(null);
+        };
+
+        return (
+          <div
+            data-testid="actual-group-modal"
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-xs p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="actual-group-modal-title"
+          >
+            <div className="w-full max-w-lg rounded-2xl bg-white dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834] p-5 sm:p-6 space-y-4 shadow-xl">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h2
+                    id="actual-group-modal-title"
+                    className="font-display text-lg font-semibold text-[#141413] dark:text-[#F3F4F6]"
+                  >
+                    Recorded Study Sessions
+                  </h2>
+                  <p className="text-xs font-mono tabular-nums text-[#5A5A55] dark:text-[#9CA3AF] mt-0.5">
+                    {formatTime24(groupStartMin)} – {formatTime24(groupEndMin)} ·{' '}
+                    {formatDurationLabel(totalDurationMins)} ({inspectedSessions.length}{' '}
+                    {inspectedSessions.length === 1 ? 'session' : 'sessions'})
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setInspectedActualIds(null);
+                    setEditingActualSession(null);
+                    setConfirmDeleteSessionId(null);
+                  }}
+                  aria-label="Close recorded sessions modal"
+                  className="p-2 rounded-lg text-[#5A5A55] dark:text-[#9CA3AF] hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="max-h-[60vh] overflow-y-auto ios-scroll space-y-2.5 pr-0.5">
+                {inspectedSessions.map((ses) => {
+                  const sub = subjects[ses.subject] ?? subjects.general;
+                  const sDt = new Date(ses.startTimestamp);
+                  const eDt = new Date(ses.endTimestamp);
+                  const sMin = sDt.getHours() * 60 + sDt.getMinutes();
+                  const eMin = Math.max(sMin + 1, eDt.getHours() * 60 + eDt.getMinutes());
+                  const linkedTask = ses.taskId ? taskById.get(ses.taskId) : undefined;
+                  const isEditingThis = editingActualSession?.id === ses.id;
+                  const isConfirmingDelete = confirmDeleteSessionId === ses.id;
+
+                  if (isEditingThis && editingActualSession) {
+                    const candidateTasks = tasks.filter(
+                      (t) =>
+                        !t.deletedAt &&
+                        (t.id === editingActualSession.taskId ||
+                          (!t.completed && t.subject === editingActualSession.subject))
+                    );
+                    return (
+                      <form
+                        key={ses.id}
+                        onSubmit={handleSaveSessionEdit}
+                        data-testid={`actual-session-edit-form-${ses.id}`}
+                        className="rounded-xl border border-[#4338CA]/40 dark:border-[#6366F1]/50 bg-[#F7F7F5] dark:bg-[#0B0D11] p-3.5 space-y-3"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-semibold text-[#141413] dark:text-[#F3F4F6]">
+                            Edit Recorded Session
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setEditingActualSession(null)}
+                            className="text-xs text-[#5A5A55] dark:text-[#9CA3AF] hover:underline cursor-pointer"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+
+                        {editingActualSession.error && (
+                          <p className="text-xs text-red-600 dark:text-red-400 font-medium">
+                            {editingActualSession.error}
+                          </p>
+                        )}
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                          <div>
+                            <label className="block text-[11px] font-medium text-[#5A5A55] dark:text-[#9CA3AF] mb-1">
+                              Title
+                            </label>
+                            <input
+                              type="text"
+                              value={editingActualSession.title}
+                              onChange={(e) =>
+                                setEditingActualSession({
+                                  ...editingActualSession,
+                                  title: e.target.value,
+                                })
+                              }
+                              className="w-full rounded-lg bg-white dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834] px-2.5 py-1.5 text-xs text-[#141413] dark:text-[#F3F4F6]"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[11px] font-medium text-[#5A5A55] dark:text-[#9CA3AF] mb-1">
+                              Subject
+                            </label>
+                            <select
+                              value={editingActualSession.subject}
+                              onChange={(e) =>
+                                setEditingActualSession({
+                                  ...editingActualSession,
+                                  subject: e.target.value as SubjectKey,
+                                })
+                              }
+                              className="w-full rounded-lg bg-white dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834] px-2.5 py-1.5 text-xs text-[#141413] dark:text-[#F3F4F6]"
+                            >
+                              {Object.values(subjects).map((s) => (
+                                <option key={s.id} value={s.id}>
+                                  {s.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2">
+                          <div>
+                            <label className="block text-[11px] font-medium text-[#5A5A55] dark:text-[#9CA3AF] mb-1">
+                              Date
+                            </label>
+                            <input
+                              type="date"
+                              max={todayISO}
+                              value={editingActualSession.date}
+                              onChange={(e) =>
+                                setEditingActualSession({
+                                  ...editingActualSession,
+                                  date: e.target.value,
+                                })
+                              }
+                              className="w-full rounded-lg bg-white dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834] px-2 py-1.5 text-xs font-mono text-[#141413] dark:text-[#F3F4F6]"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[11px] font-medium text-[#5A5A55] dark:text-[#9CA3AF] mb-1">
+                              Start
+                            </label>
+                            <input
+                              type="time"
+                              value={editingActualSession.startTime}
+                              onChange={(e) =>
+                                setEditingActualSession({
+                                  ...editingActualSession,
+                                  startTime: e.target.value,
+                                })
+                              }
+                              className="w-full rounded-lg bg-white dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834] px-2 py-1.5 text-xs font-mono text-[#141413] dark:text-[#F3F4F6]"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[11px] font-medium text-[#5A5A55] dark:text-[#9CA3AF] mb-1">
+                              End
+                            </label>
+                            <input
+                              type="time"
+                              value={editingActualSession.endTime}
+                              onChange={(e) =>
+                                setEditingActualSession({
+                                  ...editingActualSession,
+                                  endTime: e.target.value,
+                                })
+                              }
+                              className="w-full rounded-lg bg-white dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834] px-2 py-1.5 text-xs font-mono text-[#141413] dark:text-[#F3F4F6]"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-medium text-[#5A5A55] dark:text-[#9CA3AF] mb-1">
+                            Linked Task (optional)
+                          </label>
+                          <select
+                            value={editingActualSession.taskId ?? ''}
+                            onChange={(e) =>
+                              setEditingActualSession({
+                                ...editingActualSession,
+                                taskId: e.target.value || null,
+                              })
+                            }
+                            className="w-full rounded-lg bg-white dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834] px-2.5 py-1.5 text-xs text-[#141413] dark:text-[#F3F4F6]"
+                          >
+                            <option value="">No linked task</option>
+                            {candidateTasks.map((t) => (
+                              <option key={t.id} value={t.id}>
+                                {t.title}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-medium text-[#5A5A55] dark:text-[#9CA3AF] mb-1">
+                            Notes
+                          </label>
+                          <textarea
+                            rows={2}
+                            value={editingActualSession.notes}
+                            onChange={(e) =>
+                              setEditingActualSession({
+                                ...editingActualSession,
+                                notes: e.target.value,
+                              })
+                            }
+                            placeholder="Session reflections or topics covered..."
+                            className="w-full rounded-lg bg-white dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834] px-2.5 py-1.5 text-xs text-[#141413] dark:text-[#F3F4F6]"
+                          />
+                        </div>
+
+                        <div className="flex justify-end gap-2">
+                          <button
+                            type="submit"
+                            className="px-3.5 py-1.5 rounded-lg bg-[#4338CA] dark:bg-[#6366F1] text-white text-xs font-semibold hover:opacity-90 cursor-pointer"
+                          >
+                            Save Session
+                          </button>
+                        </div>
+                      </form>
+                    );
+                  }
+
+                  return (
+                    <div
+                      key={ses.id}
+                      data-testid={`actual-session-row-${ses.id}`}
+                      className="rounded-xl border border-[#E5E5E0] dark:border-[#232834] bg-[#F7F7F5]/80 dark:bg-[#0B0D11] p-3.5 space-y-1.5"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1 space-y-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span
+                              className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold border"
+                              style={{
+                                color: sub.color,
+                                borderColor: `${sub.color}55`,
+                                backgroundColor: `${sub.color}14`,
+                              }}
+                            >
+                              <span
+                                className="w-1.5 h-1.5 rounded-full"
+                                style={{ backgroundColor: sub.color }}
+                              />
+                              {sub.label}
+                            </span>
+                            <span className="text-xs font-mono tabular-nums font-semibold text-[#141413] dark:text-[#F3F4F6]">
+                              {formatTime24(sMin)} – {formatTime24(eMin)} ·{' '}
+                              {formatDurationLabel(ses.durationMinutes)}
+                            </span>
+                          </div>
+                          <div className="text-sm font-semibold text-[#141413] dark:text-[#F3F4F6] leading-snug">
+                            {ses.title}
+                          </div>
+                          {linkedTask && (
+                            <div className="text-[11px] text-[#4338CA] dark:text-[#A5B4FC] font-medium">
+                              Linked task: {linkedTask.title}
+                            </div>
+                          )}
+                          {ses.notes && (
+                            <p className="text-xs text-[#5A5A55] dark:text-[#9CA3AF] whitespace-pre-wrap">
+                              {ses.notes}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-1 shrink-0">
+                          {isConfirmingDelete ? (
+                            <div className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                data-testid={`confirm-delete-session-${ses.id}`}
+                                onClick={() => {
+                                  onDeleteSession(ses.id);
+                                  setConfirmDeleteSessionId(null);
+                                }}
+                                className="px-2 py-1 rounded-md bg-red-600 text-white text-[11px] font-semibold hover:bg-red-700 cursor-pointer"
+                              >
+                                Confirm
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setConfirmDeleteSessionId(null)}
+                                className="px-2 py-1 rounded-md border border-[#E5E5E0] dark:border-[#232834] text-[11px] text-[#5A5A55] dark:text-[#9CA3AF] cursor-pointer"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          ) : (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => startEditingSession(ses)}
+                                aria-label={`Edit session ${ses.title}`}
+                                className="p-1.5 rounded-lg text-[#5A5A55] dark:text-[#9CA3AF] hover:bg-black/5 dark:hover:bg-white/5 hover:text-[#141413] dark:hover:text-[#F3F4F6] cursor-pointer"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setConfirmDeleteSessionId(ses.id)}
+                                aria-label={`Delete session ${ses.title}`}
+                                className="p-1.5 rounded-lg text-[#5A5A55] dark:text-[#9CA3AF] hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600 dark:hover:text-red-400 cursor-pointer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <div className="flex justify-end pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setInspectedActualIds(null);
+                    setEditingActualSession(null);
+                    setConfirmDeleteSessionId(null);
+                  }}
+                  className="px-4 py-2 rounded-lg border border-[#E5E5E0] dark:border-[#232834] text-xs font-medium text-[#141413] dark:text-[#F3F4F6] hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 };

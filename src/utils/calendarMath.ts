@@ -1,3 +1,4 @@
+import type { StudySession, SubjectKey } from '../types/app';
 import { toISODateLocal, addDaysISO } from './nlpTaskParser';
 
 export const MINUTES_PER_DAY = 1440;
@@ -176,4 +177,88 @@ export function computeOverlapLayout<T extends TimeSpanItem>(items: T[]): Positi
 
 export function isOffPeakHour(hour: number): boolean {
   return hour < 6 || hour >= 23;
+}
+
+export interface MergedRecordedSessionGroup {
+  id: string;
+  startMinutes: number;
+  endMinutes: number;
+  spanMinutes: number;
+  totalDurationMinutes: number;
+  primarySubject: SubjectKey;
+  sessions: StudySession[];
+}
+
+/**
+ * Chronologically sorts recorded sessions and visually merges any overlapping sessions
+ * or adjacent sessions with a gap of <= maxGapMinutes (default 15m) into a single block.
+ */
+export function mergeRecordedSessionsForCalendar(
+  sessions: StudySession[],
+  maxGapMinutes: number = 15
+): MergedRecordedSessionGroup[] {
+  const active = sessions
+    .filter((s) => !s.deletedAt && s.durationMinutes > 0)
+    .sort((a, b) => a.startTimestamp - b.startTimestamp || a.endTimestamp - b.endTimestamp);
+
+  if (active.length === 0) return [];
+
+  const maxGapMs = maxGapMinutes * 60_000;
+  const groups: Array<{
+    sessions: StudySession[];
+    earliestStartMs: number;
+    latestEndMs: number;
+  }> = [];
+
+  for (const s of active) {
+    const lastGroup = groups[groups.length - 1];
+    if (!lastGroup || s.startTimestamp > lastGroup.latestEndMs + maxGapMs) {
+      groups.push({
+        sessions: [s],
+        earliestStartMs: s.startTimestamp,
+        latestEndMs: Math.max(s.endTimestamp, s.startTimestamp + s.durationMinutes * 60_000),
+      });
+    } else {
+      lastGroup.sessions.push(s);
+      lastGroup.latestEndMs = Math.max(
+        lastGroup.latestEndMs,
+        s.endTimestamp,
+        s.startTimestamp + s.durationMinutes * 60_000
+      );
+    }
+  }
+
+  return groups.map((g) => {
+    const startDt = new Date(g.earliestStartMs);
+    const startMinutes = startDt.getHours() * 60 + startDt.getMinutes();
+    const spanFromTimestamps = Math.max(1, Math.round((g.latestEndMs - g.earliestStartMs) / 60_000));
+    const endMinutes = Math.min(MINUTES_PER_DAY, startMinutes + spanFromTimestamps);
+    const spanMinutes = Math.max(1, endMinutes - startMinutes);
+
+    let totalDurationMinutes = 0;
+    const bySubject = new Map<SubjectKey, number>();
+    for (const ses of g.sessions) {
+      totalDurationMinutes += ses.durationMinutes;
+      bySubject.set(ses.subject, (bySubject.get(ses.subject) ?? 0) + ses.durationMinutes);
+    }
+
+    let primarySubject: SubjectKey = g.sessions[0].subject;
+    let bestMins = -1;
+    for (const [sub, mins] of bySubject.entries()) {
+      if (mins > bestMins) {
+        bestMins = mins;
+        primarySubject = sub;
+      }
+    }
+
+    return {
+      id: g.sessions.map((s) => s.id).join('__'),
+      startMinutes,
+      endMinutes,
+      spanMinutes,
+      totalDurationMinutes,
+      primarySubject,
+      sessions: g.sessions,
+    };
+  });
 }

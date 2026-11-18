@@ -71,7 +71,7 @@ import {
   updateBlockSynced,
   updateTaskSynced,
 } from './utils/bidirectionalSync';
-import { buildManualStudySession } from './utils/manualSession';
+import { buildManualStudySession, updateExistingStudySession } from './utils/manualSession';
 import { parseNaturalLanguageTask, toISODateLocal } from './utils/nlpTaskParser';
 import { mergeAppState } from './utils/syncMerge';
 
@@ -426,6 +426,27 @@ export default function App() {
       ...prev,
       sessions: prev.sessions.map((s) =>
         s.id === sessionId ? { ...s, deletedAt: now, updatedAt: now } : s
+      ),
+    }));
+  };
+
+  const handleUpdateSession = (
+    sessionId: string,
+    input: {
+      subject: SubjectKey;
+      title: string;
+      taskId: string | null;
+      date: string;
+      startMinutes: number;
+      endMinutes: number;
+      notes: string;
+    }
+  ) => {
+    const now = Date.now();
+    mutateState((prev) => ({
+      ...prev,
+      sessions: prev.sessions.map((s) =>
+        s.id === sessionId ? updateExistingStudySession(s, input, prev.subjects, now) : s
       ),
     }));
   };
@@ -830,6 +851,8 @@ export default function App() {
             onStartTimerFromBlock={handleStartTimerFromBlock}
             onOpenLogSession={openNewManualSession}
             onEditManualSession={openEditManualSession}
+            onUpdateSession={handleUpdateSession}
+            onDeleteSession={handleDeleteManualSession}
           />
         ) : (
           <div className="flex-1 min-h-0 overflow-y-auto ios-scroll touch-pan-y">
