@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   snapMinutes,
   clampBlockDuration,
+  computeDragSelectionRange,
   formatTime24,
   formatClockTimer,
   computeOverlapLayout,
@@ -14,6 +15,24 @@ test('snaps minutes to 15-minute increments within 00:00-23:45', () => {
   assert.equal(snapMinutes(-10), 0);
   assert.equal(snapMinutes(1439), 1425);
   assert.equal(clampBlockDuration(1400, 90), 40);
+});
+
+test('computeDragSelectionRange supports downward, upward, and minimum 15m drags', () => {
+  // Downward: 08:30 (510) -> 10:15 (615) => 1h 45m (105m)
+  const down = computeDragSelectionRange(510, 615);
+  assert.deepEqual(down, { startMinutes: 510, endMinutes: 615, durationMinutes: 105 });
+
+  // Upward: 10:15 (615) -> 08:30 (510) => 08:30 - 10:15 (105m)
+  const up = computeDragSelectionRange(615, 510);
+  assert.deepEqual(up, { startMinutes: 510, endMinutes: 615, durationMinutes: 105 });
+
+  // Single slot / zero movement enforces minimum 15m
+  const min = computeDragSelectionRange(510, 512);
+  assert.deepEqual(min, { startMinutes: 510, endMinutes: 525, durationMinutes: 15 });
+
+  // Bottom of day clamp (23:45 -> 24:00)
+  const endOfDay = computeDragSelectionRange(1425, 1455);
+  assert.deepEqual(endOfDay, { startMinutes: 1425, endMinutes: 1440, durationMinutes: 15 });
 });
 
 test('formats 24h time and clock timer cleanly', () => {

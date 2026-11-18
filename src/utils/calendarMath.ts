@@ -9,11 +9,53 @@ export function snapMinutes(minutes: number, step: number = SNAP_MINUTES): numbe
   return Math.round(clamped / step) * step;
 }
 
+export function snapEdgeMinutes(minutes: number, step: number = SNAP_MINUTES): number {
+  const clamped = Math.max(0, Math.min(MINUTES_PER_DAY, minutes));
+  return Math.round(clamped / step) * step;
+}
+
 export function clampBlockDuration(startMinutes: number, durationMinutes: number): number {
   const minDur = SNAP_MINUTES;
   const maxDur = Math.max(minDur, MINUTES_PER_DAY - startMinutes);
   const snapped = Math.round(durationMinutes / SNAP_MINUTES) * SNAP_MINUTES;
   return Math.max(minDur, Math.min(maxDur, snapped));
+}
+
+export interface DragSelectionRange {
+  startMinutes: number;
+  endMinutes: number;
+  durationMinutes: number;
+}
+
+/**
+ * Computes a 15-minute snapped selection range supporting both downward and upward drags,
+ * enforcing a minimum duration of 15 minutes and clamping within 00:00..24:00.
+ */
+export function computeDragSelectionRange(
+  anchorMinutes: number,
+  currentMinutes: number,
+  minDurationMinutes: number = SNAP_MINUTES
+): DragSelectionRange {
+  const anchor = snapMinutes(anchorMinutes);
+  const current = snapEdgeMinutes(currentMinutes);
+
+  let startMinutes = Math.min(anchor, current);
+  let endMinutes = Math.max(anchor, current);
+
+  if (endMinutes - startMinutes < minDurationMinutes) {
+    if (startMinutes + minDurationMinutes <= MINUTES_PER_DAY) {
+      endMinutes = startMinutes + minDurationMinutes;
+    } else {
+      startMinutes = Math.max(0, MINUTES_PER_DAY - minDurationMinutes);
+      endMinutes = MINUTES_PER_DAY;
+    }
+  }
+
+  return {
+    startMinutes,
+    endMinutes,
+    durationMinutes: endMinutes - startMinutes,
+  };
 }
 
 export function formatTime24(minutesFromMidnight: number): string {

@@ -22,6 +22,7 @@ import type {
 } from '../types/app';
 import {
   clampBlockDuration,
+  computeDragSelectionRange,
   computeOverlapLayout,
   daysUntilISO,
   DEFAULT_SCROLL_HOUR,
@@ -29,6 +30,7 @@ import {
   formatTime24,
   getWeekDaysISO,
   isOffPeakHour,
+  snapEdgeMinutes,
   snapMinutes,
 } from '../utils/calendarMath';
 import { addDaysISO, toISODateLocal } from '../utils/nlpTaskParser';
@@ -60,6 +62,15 @@ interface DropPreviewState {
   durationMinutes: number;
   title: string;
   subject: SubjectKey;
+}
+
+interface DragSelectState {
+  date: string;
+  anchorMinutes: number;
+  startMinutes: number;
+  endMinutes: number;
+  durationMinutes: number;
+  isActive: boolean;
 }
 
 const HOUR_HEIGHT = 52; // px per hour => 1248px total for 24h; 15m = 13px
@@ -98,6 +109,10 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     setDropPreview(preview);
   };
 
+  // Drag-to-Select New Block State
+  const [dragSelection, setDragSelection] = useState<DragSelectState | null>(null);
+  const dragSelectionCleanupRef = useRef<(() => void) | null>(null);
+
   // Block Resize State
   const [resizingBlock, setResizingBlock] = useState<{
     block: CalendarBlock;
@@ -120,6 +135,12 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const hasScrolledRef = useRef(false);
+
+  useEffect(() => {
+    return () => {
+      dragSelectionCleanupRef.current?.();
+    };
+  }, []);
 
   // Auto-scroll to 06:00 on mount
   useEffect(() => {
@@ -248,20 +269,173 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
     setAnchorDate((prev) => addDaysISO(prev, dir * (viewMode === 'week' ? 7 : 1)));
   };
 
-  const handleSlotClick = (date: string, clientY: number, containerTop: number) => {
-    const offsetY = clientY - containerTop;
-    const rawMins = (offsetY / HOUR_HEIGHT) * 60;
-    const snapped = snapMinutes(rawMins);
+  const closeModal = () => {
+    setEditingBlock(null);
+    setDragSelection(null);
+  };
+
+  const openCreateModalForRange = (
+    date: string,
+    startMinutes: number,
+    durationMinutes: number
+  ) => {
+    setDragSelection({
+      date,
+      anchorMinutes: startMinutes,
+      startMinutes,
+      endMinutes: startMinutes + durationMinutes,
+      durationMinutes,
+      isActive: false,
+    });
     setEditingBlock({
       title: '',
       subject: 'physics',
       date,
-      startMinutes: snapped,
-      durationMinutes: 60,
+      startMinutes,
+      durationMinutes,
       completed: false,
       notes: '',
       taskId: null,
     });
+  };
+
+  const handleColumnPointerDown = (
+    e: React.PointerEvent<HTMLDivElement>,
+    date: string
+  ) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    const target = e.target as HTMLElement;
+    if (target.closest('[data-calendar-block="true"], button')) return;
+    if (activeDragRef.current || resizingBlock || editingBlock) return;
+
+    const colEl = e.currentTarget;
+    const initialRect = colEl.getBoundingClientRect();
+    const anchorMinutes = snapMinutes(((e.clientY - initialRect.top) / HOUR_HEIGHT) * 60);
+    const downClientX = e.clientX;
+    const downClientY = e.clientY;
+    const isMouse = e.pointerType === 'mouse';
+
+    dragSelectionCleanupRef.current?.();
+
+    let selectionActivated = isMouse;
+    let hasDragged = false;
+    let cancelled = false;
+    let scrolledBeforeHold = false;
+    let holdTimer: number | null = null;
+    let currentRange = computeDragSelectionRange(anchorMinutes, anchorMinutes, 15);
+
+    if (isMouse) {
+      e.preventDefault();
+      setDragSelection({
+        date,
+        anchorMinutes,
+        startMinutes: currentRange.startMinutes,
+        endMinutes: currentRange.endMinutes,
+        durationMinutes: currentRange.durationMinutes,
+        isActive: true,
+      });
+    } else {
+      holdTimer = window.setTimeout(() => {
+        if (cancelled || scrolledBeforeHold) return;
+        selectionActivated = true;
+        setDragSelection({
+          date,
+          anchorMinutes,
+          startMinutes: currentRange.startMinutes,
+          endMinutes: currentRange.endMinutes,
+          durationMinutes: currentRange.durationMinutes,
+          isActive: true,
+        });
+      }, 220);
+    }
+
+    const cleanup = () => {
+      if (holdTimer !== null) {
+        window.clearTimeout(holdTimer);
+        holdTimer = null;
+      }
+      window.removeEventListener('pointermove', handleMove);
+      window.removeEventListener('pointerup', handleUp);
+      window.removeEventListener('pointercancel', handleCancel);
+      window.removeEventListener('keydown', handleKeyDown);
+      if (dragSelectionCleanupRef.current === cleanup) {
+        dragSelectionCleanupRef.current = null;
+      }
+    };
+
+    const handleKeyDown = (ev: KeyboardEvent) => {
+      if (ev.key === 'Escape') {
+        cancelled = true;
+        cleanup();
+        setDragSelection(null);
+      }
+    };
+
+    const handleMove = (ev: PointerEvent) => {
+      if (cancelled) return;
+      const distY = Math.abs(ev.clientY - downClientY);
+      const distX = Math.abs(ev.clientX - downClientX);
+
+      if (!selectionActivated) {
+        if (distY > 8 || distX > 8) {
+          scrolledBeforeHold = true;
+          cleanup();
+        }
+        return;
+      }
+
+      if (ev.cancelable) ev.preventDefault();
+
+      const colRect = colEl.getBoundingClientRect();
+      const rawMinutes = ((ev.clientY - colRect.top) / HOUR_HEIGHT) * 60;
+      const snappedEdge = snapEdgeMinutes(rawMinutes);
+
+      if (distY >= 6 || distX >= 6 || snappedEdge !== anchorMinutes) {
+        hasDragged = true;
+      }
+
+      currentRange = computeDragSelectionRange(anchorMinutes, rawMinutes, 15);
+      setDragSelection({
+        date,
+        anchorMinutes,
+        startMinutes: currentRange.startMinutes,
+        endMinutes: currentRange.endMinutes,
+        durationMinutes: currentRange.durationMinutes,
+        isActive: true,
+      });
+    };
+
+    const handleCancel = () => {
+      cancelled = true;
+      cleanup();
+      setDragSelection(null);
+    };
+
+    const handleUp = () => {
+      cleanup();
+      if (cancelled || scrolledBeforeHold) {
+        setDragSelection(null);
+        return;
+      }
+
+      if (!hasDragged) {
+        const defaultDuration = clampBlockDuration(anchorMinutes, 30);
+        openCreateModalForRange(date, anchorMinutes, defaultDuration);
+        return;
+      }
+
+      openCreateModalForRange(
+        date,
+        currentRange.startMinutes,
+        currentRange.durationMinutes
+      );
+    };
+
+    dragSelectionCleanupRef.current = cleanup;
+    window.addEventListener('pointermove', handleMove, { passive: false });
+    window.addEventListener('pointerup', handleUp);
+    window.addEventListener('pointercancel', handleCancel);
+    window.addEventListener('keydown', handleKeyDown);
   };
 
   const handleDragOverDay = (e: React.DragEvent, date: string) => {
@@ -355,11 +529,33 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
         notes: editingBlock.notes,
       });
     }
-    setEditingBlock(null);
+    closeModal();
   };
 
+  const isSelectingSlot = Boolean(dragSelection?.isActive);
+
+  const durationOptions = useMemo(() => {
+    if (!editingBlock) return [15, 30, 45, 60];
+    const maxAllowed = Math.max(15, 1440 - editingBlock.startMinutes);
+    const cap = Math.min(maxAllowed, Math.max(480, editingBlock.durationMinutes));
+    const opts: number[] = [];
+    for (let m = 15; m <= cap; m += 15) {
+      opts.push(m);
+    }
+    return opts;
+  }, [editingBlock]);
+
+  const endTimeOptions = useMemo(() => {
+    if (!editingBlock) return [];
+    const opts: number[] = [];
+    for (let m = editingBlock.startMinutes + 15; m <= 1440; m += 15) {
+      opts.push(m);
+    }
+    return opts;
+  }, [editingBlock]);
+
   return (
-    <div className="flex flex-col h-full min-h-0 w-full">
+    <div className={`flex flex-col h-full min-h-0 w-full ${isSelectingSlot ? 'select-none' : ''}`}>
       {/* Top Calendar Toolbar & Exam Countdowns */}
       <div className="shrink-0 px-4 sm:px-6 pt-4 pb-3 border-b border-[#E5E5E0] dark:border-[#232834] bg-[#F7F7F5] dark:bg-[#0B0D11] space-y-2.5">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -536,7 +732,9 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           <div
             ref={scrollRef}
             data-testid="calendar-scroll-viewport"
-            className="flex-1 min-h-0 overflow-y-auto ios-scroll touch-pan-y bg-white dark:bg-[#0F1218]"
+            className={`flex-1 min-h-0 overflow-y-auto ios-scroll bg-white dark:bg-[#0F1218] ${
+              isSelectingSlot ? 'touch-none select-none' : 'touch-pan-y'
+            }`}
           >
             <div
               className="relative grid"
@@ -582,6 +780,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
                 const isToday = iso === todayISO;
                 const colDropPreview = dropPreview && dropPreview.date === iso ? dropPreview : null;
+                const colDragSelection =
+                  dragSelection && dragSelection.date === iso ? dragSelection : null;
 
                 return (
                   <div
@@ -597,16 +797,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                       }
                     }}
                     onDrop={(e) => handleDropOnDay(e, iso)}
-                    onClick={(e) => {
-                      if (
-                        e.target === e.currentTarget ||
-                        (e.target as HTMLElement).dataset.hourCell === 'true'
-                      ) {
-                        const rect = e.currentTarget.getBoundingClientRect();
-                        handleSlotClick(iso, e.clientY, rect.top);
-                      }
-                    }}
-                    className="relative border-r last:border-r-0 border-[#E5E5E0] dark:border-[#232834]"
+                    onPointerDown={(e) => handleColumnPointerDown(e, iso)}
+                    className="relative border-r last:border-r-0 border-[#E5E5E0] dark:border-[#232834] cursor-crosshair"
                   >
                     {/* Hour Background Cells with Off-Peak Shading */}
                     {HOURS.map((hour) => (
@@ -630,6 +822,27 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                       >
                         <span className="w-2 h-2 rounded-full bg-rose-500 -ml-1" />
                         <div className="flex-1 h-[1.5px] bg-rose-500" />
+                      </div>
+                    )}
+
+                    {/* Drag-to-Select Ghost Range Preview (15-min snapped) */}
+                    {colDragSelection && (
+                      <div
+                        data-testid="calendar-drag-select-ghost"
+                        style={{
+                          top: `${(colDragSelection.startMinutes / 60) * HOUR_HEIGHT}px`,
+                          height: `${Math.max(24, (colDragSelection.durationMinutes / 60) * HOUR_HEIGHT)}px`,
+                        }}
+                        className="absolute left-[2%] right-[2%] z-30 rounded-lg border-2 border-[#4338CA] dark:border-[#6366F1] bg-indigo-500/20 dark:bg-indigo-400/25 px-1.5 py-1 pointer-events-none flex items-start shadow-sm backdrop-blur-[1px] overflow-hidden"
+                      >
+                        <span
+                          data-testid="calendar-drag-select-badge"
+                          className="inline-flex items-center rounded-md bg-[#4338CA] dark:bg-[#6366F1] text-white px-1.5 py-0.5 text-[10px] font-mono tabular-nums font-semibold shadow-xs whitespace-nowrap max-w-full truncate"
+                        >
+                          {formatTime24(colDragSelection.startMinutes)} –{' '}
+                          {formatTime24(colDragSelection.endMinutes)} (
+                          {formatDurationLabel(colDragSelection.durationMinutes)})
+                        </span>
                       </div>
                     )}
 
@@ -698,6 +911,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                       return (
                         <div
                           key={blk.id}
+                          data-calendar-block="true"
                           draggable
                           onDragStart={(e) => {
                             const payload: ActiveDragPayload = {
@@ -928,7 +1142,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               </h2>
               <button
                 type="button"
-                onClick={() => setEditingBlock(null)}
+                onClick={closeModal}
                 aria-label="Close block modal"
                 className="p-2 rounded-lg text-[#5A5A55] dark:text-[#9CA3AF] hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
               >
@@ -983,18 +1197,50 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label htmlFor="blk-start" className="block text-xs font-medium text-[#141413] dark:text-[#F3F4F6] mb-1">
-                  Start Time (15m snap)
+                  Start Time
                 </label>
                 <select
                   id="blk-start"
                   value={editingBlock.startMinutes}
-                  onChange={(e) => setEditingBlock({ ...editingBlock, startMinutes: Number(e.target.value) })}
+                  onChange={(e) => {
+                    const nextStart = Number(e.target.value);
+                    const nextDuration = clampBlockDuration(nextStart, editingBlock.durationMinutes);
+                    setEditingBlock({
+                      ...editingBlock,
+                      startMinutes: nextStart,
+                      durationMinutes: nextDuration,
+                    });
+                  }}
                   className="w-full rounded-lg bg-[#F7F7F5] dark:bg-[#0B0D11] border border-[#E5E5E0] dark:border-[#232834] px-3 py-2 text-sm font-mono text-[#141413] dark:text-[#F3F4F6]"
                 >
                   {Array.from({ length: 96 }, (_, i) => i * 15).map((m) => (
+                    <option key={m} value={m}>
+                      {formatTime24(m)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="blk-end" className="block text-xs font-medium text-[#141413] dark:text-[#F3F4F6] mb-1">
+                  End Time
+                </label>
+                <select
+                  id="blk-end"
+                  value={Math.min(1440, editingBlock.startMinutes + editingBlock.durationMinutes)}
+                  onChange={(e) => {
+                    const nextEnd = Number(e.target.value);
+                    const nextDuration = clampBlockDuration(
+                      editingBlock.startMinutes,
+                      nextEnd - editingBlock.startMinutes
+                    );
+                    setEditingBlock({ ...editingBlock, durationMinutes: nextDuration });
+                  }}
+                  className="w-full rounded-lg bg-[#F7F7F5] dark:bg-[#0B0D11] border border-[#E5E5E0] dark:border-[#232834] px-3 py-2 text-sm font-mono text-[#141413] dark:text-[#F3F4F6]"
+                >
+                  {endTimeOptions.map((m) => (
                     <option key={m} value={m}>
                       {formatTime24(m)}
                     </option>
@@ -1008,10 +1254,18 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 <select
                   id="blk-duration"
                   value={editingBlock.durationMinutes}
-                  onChange={(e) => setEditingBlock({ ...editingBlock, durationMinutes: Number(e.target.value) })}
+                  onChange={(e) =>
+                    setEditingBlock({
+                      ...editingBlock,
+                      durationMinutes: clampBlockDuration(
+                        editingBlock.startMinutes,
+                        Number(e.target.value)
+                      ),
+                    })
+                  }
                   className="w-full rounded-lg bg-[#F7F7F5] dark:bg-[#0B0D11] border border-[#E5E5E0] dark:border-[#232834] px-3 py-2 text-sm font-mono text-[#141413] dark:text-[#F3F4F6]"
                 >
-                  {[15, 30, 45, 60, 75, 90, 120, 150, 180, 240].map((d) => (
+                  {durationOptions.map((d) => (
                     <option key={d} value={d}>
                       {formatDurationLabel(d)}
                     </option>
@@ -1052,7 +1306,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                   type="button"
                   onClick={() => {
                     onDeleteBlock(editingBlock.id!);
-                    setEditingBlock(null);
+                    closeModal();
                   }}
                   className="px-3 py-2 rounded-lg text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 flex items-center gap-1.5 cursor-pointer"
                 >
@@ -1066,7 +1320,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => setEditingBlock(null)}
+                  onClick={closeModal}
                   className="px-4 py-2 rounded-lg border border-[#E5E5E0] dark:border-[#232834] text-xs font-medium text-[#141413] dark:text-[#F3F4F6] cursor-pointer"
                 >
                   Cancel
