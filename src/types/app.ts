@@ -10,7 +10,7 @@ export type PaperQuestionStatus = 'unattempted' | 'mastered' | 'redo' | 'silly';
 
 export type SyllabusMastery = 'not_started' | 'learning' | 'revised' | 'mastered';
 
-export type TimerMode = 'pomodoro_25' | 'pomodoro_50' | 'flowtime' | 'scheduled';
+export type TimerMode = 'pomodoro_25' | 'pomodoro_50' | 'flowtime' | 'scheduled' | 'manual';
 
 export type NavTab = 'calendar' | 'tasks' | 'timer' | 'papers' | 'syllabus' | 'analytics' | 'settings';
 
@@ -76,6 +76,15 @@ export interface StudySession {
   notes: string;
   taskId: string | null;
   blockId: string | null;
+  // Unified live + manual Firestore schema metadata
+  isManual?: boolean;
+  subjectId?: string;
+  subjectName?: string;
+  startTime?: string; // ISO 8601 string
+  endTime?: string; // ISO 8601 string
+  durationSeconds?: number;
+  createdAt?: number;
+  deletedAt?: number;
   updatedAt: number;
 }
 

@@ -112,7 +112,7 @@ export function aggregateDailySessions(sessions: StudySession[]): Map<string, Da
   const map = new Map<string, DailyAggregate>();
 
   for (const s of sessions) {
-    if (s.durationMinutes <= 0) continue;
+    if (s.deletedAt || s.durationMinutes <= 0) continue;
     let entry = map.get(s.date);
     if (!entry) {
       entry = {
@@ -238,7 +238,7 @@ export function computePlanExecutionAccuracy(
 
   const loggedByBlock = new Map<string, number>();
   for (const s of sessions) {
-    if (s.blockId && s.durationMinutes > 0) {
+    if (!s.deletedAt && s.blockId && s.durationMinutes > 0) {
       loggedByBlock.set(s.blockId, (loggedByBlock.get(s.blockId) ?? 0) + s.durationMinutes);
     }
   }
@@ -324,8 +324,8 @@ export function filterSessionsByTimeframe(
 ): { current: StudySession[]; previous: StudySession[] } {
   const { start, end, prevStart, prevEnd } = getTimeframeBounds(timeframe, todayISO);
   return {
-    current: sessions.filter((s) => s.date >= start && s.date <= end && s.durationMinutes > 0),
-    previous: sessions.filter((s) => s.date >= prevStart && s.date <= prevEnd && s.durationMinutes > 0),
+    current: sessions.filter((s) => !s.deletedAt && s.date >= start && s.date <= end && s.durationMinutes > 0),
+    previous: sessions.filter((s) => !s.deletedAt && s.date >= prevStart && s.date <= prevEnd && s.durationMinutes > 0),
   };
 }
 
@@ -562,7 +562,7 @@ export function computePeakFocusHours(sessions: StudySession[]): HourlyFocusDatu
   const hourBuckets = Array.from({ length: 24 }, () => 0);
 
   for (const s of sessions) {
-    if (s.durationMinutes <= 0) continue;
+    if (s.deletedAt || s.durationMinutes <= 0) continue;
     let remaining = s.durationMinutes;
     let cursorMs = s.startTimestamp;
 

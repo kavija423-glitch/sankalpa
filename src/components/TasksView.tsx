@@ -9,11 +9,14 @@ import {
   Repeat,
   Trash2,
 } from 'lucide-react';
-import type { SubjectConfig, SubjectKey, TaskItem } from '../types/app';
+import type { StudySession, SubjectConfig, SubjectKey, TaskItem } from '../types/app';
+import { formatDurationLabel } from '../utils/calendarMath';
+import { computeTaskLoggedMinutesMap } from '../utils/manualSession';
 import { parseNaturalLanguageTask, toISODateLocal } from '../utils/nlpTaskParser';
 
 interface TasksViewProps {
   tasks: TaskItem[];
+  sessions: StudySession[];
   subjects: Record<SubjectKey, SubjectConfig>;
   onAddTask: (rawOrStructured: string) => void;
   onToggleTask: (taskId: string) => void;
@@ -26,6 +29,7 @@ interface TasksViewProps {
 
 export const TasksView: React.FC<TasksViewProps> = ({
   tasks,
+  sessions,
   subjects,
   onAddTask,
   onToggleTask,
@@ -43,6 +47,8 @@ export const TasksView: React.FC<TasksViewProps> = ({
   const [schedulePromptTask, setSchedulePromptTask] = useState<TaskItem | null>(null);
   const [scheduleDate, setScheduleDate] = useState(toISODateLocal(new Date()));
   const [scheduleStart, setScheduleStart] = useState(540);
+
+  const loggedMinutesByTask = useMemo(() => computeTaskLoggedMinutesMap(sessions), [sessions]);
 
   const livePreview = useMemo(() => {
     if (!quickInput.trim()) return null;
@@ -330,6 +336,17 @@ export const TasksView: React.FC<TasksViewProps> = ({
                           <span aria-hidden="true">·</span>
                           <span className="font-mono tabular-nums">
                             {doneSubtasks}/{task.subtasks.length} steps
+                          </span>
+                        </>
+                      )}
+                      {(loggedMinutesByTask.get(task.id) ?? 0) > 0 && (
+                        <>
+                          <span aria-hidden="true">·</span>
+                          <span
+                            data-testid={`task-logged-${task.id}`}
+                            className="font-mono tabular-nums font-medium text-[#4338CA] dark:text-[#A5B4FC]"
+                          >
+                            Logged {formatDurationLabel(loggedMinutesByTask.get(task.id) ?? 0)}
                           </span>
                         </>
                       )}

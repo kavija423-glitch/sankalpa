@@ -17,6 +17,7 @@ import type { User } from 'firebase/auth';
 import { AnalyticsView } from './components/AnalyticsView';
 import { BrandLogo } from './components/BrandLogo';
 import { CalendarView } from './components/CalendarView';
+import { ManualSessionModal } from './components/ManualSessionModal';
 import { PapersView } from './components/PapersView';
 import { PWAInstallButton } from './components/PWAInstallButton';
 import { SessionLogModal } from './components/SessionLogModal';
@@ -70,6 +71,7 @@ import {
   updateBlockSynced,
   updateTaskSynced,
 } from './utils/bidirectionalSync';
+import { buildManualStudySession } from './utils/manualSession';
 import { parseNaturalLanguageTask, toISODateLocal } from './utils/nlpTaskParser';
 import { mergeAppState } from './utils/syncMerge';
 
@@ -88,6 +90,8 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<NavTab>('calendar');
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [showLogModal, setShowLogModal] = useState(false);
+  const [showManualModal, setShowManualModal] = useState(false);
+  const [editingManualSession, setEditingManualSession] = useState<StudySession | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(() => {
     try {
       return localStorage.getItem('sankalpa_sidebar_collapsed') === 'true';
@@ -346,6 +350,7 @@ export default function App() {
     const durationMinutes = Math.max(1, Math.round(elapsedMs / 60000));
     const startTs = endTs - durationMinutes * 60000;
     const t = state.activeTimer;
+    const subjectCfg = state.subjects[t.subject] ?? state.subjects.general;
     const newSession: StudySession = {
       id: `ses_${endTs}_${Math.random().toString(36).slice(2, 6)}`,
       title: t.title.trim() || 'Focused Study Session',
@@ -359,6 +364,13 @@ export default function App() {
       notes,
       taskId: t.taskId,
       blockId: t.blockId,
+      isManual: false,
+      subjectId: t.subject,
+      subjectName: subjectCfg.label,
+      startTime: new Date(startTs).toISOString(),
+      endTime: new Date(endTs).toISOString(),
+      durationSeconds: durationMinutes * 60,
+      createdAt: endTs,
       updatedAt: endTs,
     };
     mutateState((prev) => ({
@@ -372,6 +384,50 @@ export default function App() {
       },
     }));
     setShowLogModal(false);
+  };
+
+  const openNewManualSession = () => {
+    setEditingManualSession(null);
+    setShowManualModal(true);
+  };
+
+  const openEditManualSession = (ses: StudySession) => {
+    setEditingManualSession(ses);
+    setShowManualModal(true);
+  };
+
+  const handleSaveManualSession = (
+    input: {
+      subject: SubjectKey;
+      title: string;
+      taskId: string | null;
+      date: string;
+      startMinutes: number;
+      endMinutes: number;
+      notes: string;
+    },
+    existingSession?: StudySession
+  ) => {
+    mutateState((prev) => {
+      const saved = buildManualStudySession(input, prev.subjects, existingSession);
+      const exists = prev.sessions.some((s) => s.id === saved.id);
+      return {
+        ...prev,
+        sessions: exists
+          ? prev.sessions.map((s) => (s.id === saved.id ? saved : s))
+          : [saved, ...prev.sessions],
+      };
+    });
+  };
+
+  const handleDeleteManualSession = (sessionId: string) => {
+    const now = Date.now();
+    mutateState((prev) => ({
+      ...prev,
+      sessions: prev.sessions.map((s) =>
+        s.id === sessionId ? { ...s, deletedAt: now, updatedAt: now } : s
+      ),
+    }));
   };
 
   // Tasks
@@ -772,12 +828,15 @@ export default function App() {
             onDeleteBlock={handleDeleteBlock}
             onScheduleTaskOnCalendar={handleScheduleTaskOnCalendar}
             onStartTimerFromBlock={handleStartTimerFromBlock}
+            onOpenLogSession={openNewManualSession}
+            onEditManualSession={openEditManualSession}
           />
         ) : (
           <div className="flex-1 min-h-0 overflow-y-auto ios-scroll touch-pan-y">
             {activeTab === 'tasks' && (
               <TasksView
                 tasks={state.tasks}
+                sessions={state.sessions}
                 subjects={state.subjects}
                 onAddTask={handleAddTask}
                 onToggleTask={handleToggleTask}
@@ -800,6 +859,8 @@ export default function App() {
                 onToggleRun={handleToggleTimerRun}
                 onReset={handleResetTimer}
                 onRequestLogStop={() => setShowLogModal(true)}
+                onOpenLogSession={openNewManualSession}
+                onEditManualSession={openEditManualSession}
               />
             )}
             {activeTab === 'papers' && (
@@ -827,10 +888,13 @@ export default function App() {
               <AnalyticsView
                 blocks={state.blocks.filter((b) => !b.deletedAt)}
                 sessions={state.sessions}
+                tasks={state.tasks.filter((t) => !t.deletedAt)}
                 papers={state.papers}
                 syllabus={state.syllabus}
                 subjects={state.subjects}
                 dailyGoalMinutes={state.settings.dailyGoalMinutes}
+                onOpenLogSession={openNewManualSession}
+                onEditManualSession={openEditManualSession}
               />
             )}
             {activeTab === 'settings' && (
@@ -936,6 +1000,20 @@ export default function App() {
           setShowLogModal(false);
         }}
         onCancel={() => setShowLogModal(false)}
+      />
+
+      {/* Manual Study Session Log & Edit Modal */}
+      <ManualSessionModal
+        open={showManualModal}
+        editingSession={editingManualSession}
+        subjects={state.subjects}
+        tasks={state.tasks}
+        onSave={handleSaveManualSession}
+        onDelete={handleDeleteManualSession}
+        onClose={() => {
+          setShowManualModal(false);
+          setEditingManualSession(null);
+        }}
       />
     </div>
   );

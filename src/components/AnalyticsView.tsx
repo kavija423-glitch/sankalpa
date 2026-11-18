@@ -8,6 +8,7 @@ import {
   ChevronRight,
   Clock,
   Flame,
+  Pencil,
   TrendingDown,
   TrendingUp,
 } from 'lucide-react';
@@ -18,6 +19,7 @@ import type {
   SubjectConfig,
   SubjectKey,
   SyllabusUnit,
+  TaskItem,
 } from '../types/app';
 import {
   aggregateDailySessions,
@@ -35,17 +37,20 @@ import {
   type AnalyticsTimeframe,
   type HeatmapIntensity,
 } from '../utils/analyticsMath';
-import { formatDurationLabel } from '../utils/calendarMath';
+import { formatDurationLabel, formatTime24 } from '../utils/calendarMath';
 import { toISODateLocal } from '../utils/nlpTaskParser';
 import { extractRedoQueue } from '../utils/paperGenerator';
 
 interface AnalyticsViewProps {
   blocks: CalendarBlock[];
   sessions: StudySession[];
+  tasks: TaskItem[];
   papers: PastPaper[];
   syllabus: SyllabusUnit[];
   subjects: Record<SubjectKey, SubjectConfig>;
   dailyGoalMinutes: number;
+  onOpenLogSession: () => void;
+  onEditManualSession: (session: StudySession) => void;
 }
 
 const INTENSITY_CLASSES: Record<HeatmapIntensity, string> = {
@@ -73,15 +78,19 @@ const TIMEFRAME_OPTIONS: Array<{ id: AnalyticsTimeframe; label: string }> = [
 export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
   blocks,
   sessions,
+  tasks,
   papers,
   syllabus,
   subjects,
   dailyGoalMinutes,
+  onOpenLogSession,
+  onEditManualSession,
 }) => {
   const todayISO = toISODateLocal(new Date());
   const [todayYear, todayMonth] = todayISO.split('-').map(Number);
 
   const [timeframe, setTimeframe] = useState<AnalyticsTimeframe>('week');
+  const [historyFilter, setHistoryFilter] = useState<'all' | 'manual' | 'live'>('all');
   const [hoveredSubject, setHoveredSubject] = useState<SubjectKey | null>(null);
   const [monthCursor, setMonthCursor] = useState<{ year: number; month: number }>({
     year: todayYear,
@@ -103,30 +112,43 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
   const [activeTrendDay, setActiveTrendDay] = useState<string | null>(null);
   const yearlyScrollRef = useRef<HTMLDivElement | null>(null);
 
-  const dailyMap = useMemo(() => aggregateDailySessions(sessions), [sessions]);
+  const activeSessions = useMemo(
+    () => sessions.filter((s) => !s.deletedAt && s.durationMinutes > 0),
+    [sessions]
+  );
+
+  const taskTitleMap = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const t of tasks) {
+      map.set(t.id, t.title);
+    }
+    return map;
+  }, [tasks]);
+
+  const dailyMap = useMemo(() => aggregateDailySessions(activeSessions), [activeSessions]);
 
   const streaks = useMemo(() => computeStreaks(dailyMap, todayISO, 30), [dailyMap, todayISO]);
   const rolling7 = useMemo(() => computeRolling7DayAverage(dailyMap, todayISO), [dailyMap, todayISO]);
   const planAccuracy = useMemo(
-    () => computePlanExecutionAccuracy(blocks, sessions, todayISO),
-    [blocks, sessions, todayISO]
+    () => computePlanExecutionAccuracy(blocks, activeSessions, todayISO),
+    [blocks, activeSessions, todayISO]
   );
   const periodComparison = useMemo(
-    () => computePeriodComparison(sessions, timeframe, todayISO),
-    [sessions, timeframe, todayISO]
+    () => computePeriodComparison(activeSessions, timeframe, todayISO),
+    [activeSessions, timeframe, todayISO]
   );
   const allTimeMinutes = useMemo(
-    () => sessions.reduce((acc, s) => acc + Math.max(0, s.durationMinutes), 0),
-    [sessions]
+    () => activeSessions.reduce((acc, s) => acc + Math.max(0, s.durationMinutes), 0),
+    [activeSessions]
   );
 
   const subjectBreakdown = useMemo(
-    () => computeSubjectBreakdown(sessions, subjects, timeframe, todayISO),
-    [sessions, subjects, timeframe, todayISO]
+    () => computeSubjectBreakdown(activeSessions, subjects, timeframe, todayISO),
+    [activeSessions, subjects, timeframe, todayISO]
   );
   const weeklyBalanceAlerts = useMemo(
-    () => computeWeeklySubjectBalanceAlerts(sessions, subjects, todayISO, 20),
-    [sessions, subjects, todayISO]
+    () => computeWeeklySubjectBalanceAlerts(activeSessions, subjects, todayISO, 20),
+    [activeSessions, subjects, todayISO]
   );
 
   const monthlyCells = useMemo(
@@ -157,7 +179,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
     }
   }, [yearlyColumns.length]);
 
-  const peakHours = useMemo(() => computePeakFocusHours(sessions), [sessions]);
+  const peakHours = useMemo(() => computePeakFocusHours(activeSessions), [activeSessions]);
   const peakHourDatum = useMemo(
     () => peakHours.find((h) => h.isPeak && h.minutes > 0) ?? null,
     [peakHours]
@@ -239,18 +261,29 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
             Study streaks, subject distribution, heatmaps & planned-vs-actual adherence
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[#5A5A55] dark:text-[#9CA3AF] tabular-nums">
-          <span>
-            Today’s Target:{' '}
-            <strong className="font-mono text-[#141413] dark:text-[#F3F4F6]">
-              {formatDurationLabel(todayMinutes)} / {formatDurationLabel(dailyGoalMinutes)} ({todayGoalPct}%)
-            </strong>
-          </span>
-          <span aria-hidden="true">·</span>
-          <span>
-            Redo Queue:{' '}
-            <strong className="font-mono text-[#141413] dark:text-[#F3F4F6]">{redoCount}</strong>
-          </span>
+        <div className="flex flex-col sm:items-end gap-2">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[#5A5A55] dark:text-[#9CA3AF] tabular-nums">
+            <span>
+              Today’s Target:{' '}
+              <strong className="font-mono text-[#141413] dark:text-[#F3F4F6]">
+                {formatDurationLabel(todayMinutes)} / {formatDurationLabel(dailyGoalMinutes)} ({todayGoalPct}%)
+              </strong>
+            </span>
+            <span aria-hidden="true">·</span>
+            <span>
+              Redo Queue:{' '}
+              <strong className="font-mono text-[#141413] dark:text-[#F3F4F6]">{redoCount}</strong>
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={onOpenLogSession}
+            data-testid="analytics-log-session-btn"
+            className="min-h-[38px] px-3.5 py-1.5 rounded-lg bg-[#4338CA] dark:bg-[#6366F1] text-white text-xs font-semibold flex items-center gap-1.5 hover:opacity-90 whitespace-nowrap self-start sm:self-end cursor-pointer"
+          >
+            <Clock className="w-3.5 h-3.5" />
+            <span>+ Log Session</span>
+          </button>
         </div>
       </div>
 
@@ -286,7 +319,8 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
             </span>
           </div>
           <div className="text-[11px] text-[#5A5A55] dark:text-[#9CA3AF] mt-0.5 font-mono tabular-nums">
-            All-time: {formatDurationLabel(allTimeMinutes)} · {sessions.length} sessions
+            All-time: {formatDurationLabel(allTimeMinutes)} · {activeSessions.length}{' '}
+            {activeSessions.length === 1 ? 'session' : 'sessions'}
           </div>
         </div>
 
@@ -463,7 +497,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
                   {focusedDonutSubject
                     ? `${focusedDonutSubject.percentage}% · ${focusedDonutSubject.sessionCount} sess`
                     : subjectBreakdown.totalMinutes > 0
-                    ? `${periodComparison.sessionCount} sessions`
+                    ? `${periodComparison.sessionCount} ${periodComparison.sessionCount === 1 ? 'session' : 'sessions'}`
                     : 'No sessions yet'}
                 </span>
               </div>
@@ -917,6 +951,169 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({
           </div>
         </section>
       </div>
+
+      {/* 5. Session History List (Live Timer + Manual Logs) */}
+      <section
+        data-testid="analytics-session-history"
+        className="rounded-2xl bg-white dark:bg-[#13161D] border border-[#E5E5E0] dark:border-[#232834] p-5 space-y-4"
+      >
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="font-display text-base font-semibold text-[#141413] dark:text-[#F3F4F6]">
+              Session History
+            </h2>
+            <p className="text-xs text-[#5A5A55] dark:text-[#9CA3AF] mt-0.5">
+              Unified timeline of live focus sessions and manually logged study records
+            </p>
+          </div>
+
+          <div
+            role="tablist"
+            aria-label="Session history filter"
+            className="flex items-center p-1 rounded-xl bg-[#ECECE7] dark:bg-[#0B0D11] border border-[#E5E5E0] dark:border-[#232834]"
+          >
+            {(
+              [
+                { id: 'all', label: 'All' },
+                { id: 'manual', label: 'Manual' },
+                { id: 'live', label: 'Live Timer' },
+              ] as const
+            ).map((opt) => (
+              <button
+                key={opt.id}
+                type="button"
+                role="tab"
+                aria-selected={historyFilter === opt.id}
+                onClick={() => setHistoryFilter(opt.id)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer whitespace-nowrap ${
+                  historyFilter === opt.id
+                    ? 'bg-white dark:bg-[#1F2430] text-[#141413] dark:text-[#F3F4F6] shadow-xs'
+                    : 'text-[#5A5A55] dark:text-[#9CA3AF] hover:text-[#141413] dark:hover:text-[#F3F4F6]'
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {(() => {
+          const sortedHistory = [...activeSessions]
+            .filter((s) =>
+              historyFilter === 'manual'
+                ? Boolean(s.isManual)
+                : historyFilter === 'live'
+                ? !s.isManual
+                : true
+            )
+            .sort((a, b) => b.endTimestamp - a.endTimestamp);
+
+          if (sortedHistory.length === 0) {
+            return (
+              <div className="rounded-xl border border-dashed border-[#E5E5E0] dark:border-[#232834] p-6 text-center text-xs text-[#5A5A55] dark:text-[#9CA3AF]">
+                No study sessions recorded yet. Start a live timer or click{' '}
+                <button
+                  type="button"
+                  onClick={onOpenLogSession}
+                  className="font-semibold text-[#4338CA] dark:text-[#A5B4FC] hover:underline cursor-pointer"
+                >
+                  + Log Session
+                </button>{' '}
+                to record past study hours.
+              </div>
+            );
+          }
+
+          return (
+            <ul className="divide-y divide-[#E5E5E0] dark:divide-[#232834]">
+              {sortedHistory.slice(0, 40).map((ses) => {
+                const sub = subjects[ses.subject] ?? subjects.general;
+                const startDt = new Date(ses.startTimestamp);
+                const endDt = new Date(ses.endTimestamp);
+                const startMins = startDt.getHours() * 60 + startDt.getMinutes();
+                const endMins = endDt.getHours() * 60 + endDt.getMinutes();
+                const linkedTaskTitle = ses.taskId ? taskTitleMap.get(ses.taskId) : null;
+
+                return (
+                  <li
+                    key={ses.id}
+                    data-testid={`history-session-${ses.id}`}
+                    onClick={ses.isManual ? () => onEditManualSession(ses) : undefined}
+                    className={`py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 ${
+                      ses.isManual
+                        ? 'cursor-pointer hover:bg-[#F7F7F5] dark:hover:bg-[#0B0D11] px-2.5 -mx-2.5 rounded-xl transition-colors'
+                        : ''
+                    }`}
+                  >
+                    <div className="min-w-0 space-y-0.5">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span
+                          className="w-2.5 h-2.5 rounded-xs shrink-0"
+                          style={{ backgroundColor: sub.color }}
+                        />
+                        <span className="text-sm font-semibold text-[#141413] dark:text-[#F3F4F6] truncate">
+                          {ses.title}
+                        </span>
+                        {ses.isManual && (
+                          <span
+                            data-testid="history-manual-badge"
+                            className="inline-flex items-center rounded px-1.5 py-0.2 text-[10px] font-semibold uppercase tracking-wide border"
+                            style={{
+                              color: sub.color,
+                              borderColor: `${sub.color}66`,
+                              backgroundColor: `${sub.color}14`,
+                            }}
+                          >
+                            Manual
+                          </span>
+                        )}
+                        {linkedTaskTitle && (
+                          <span className="text-[11px] text-[#4338CA] dark:text-[#A5B4FC] truncate">
+                            → {linkedTaskTitle}
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-xs text-[#5A5A55] dark:text-[#9CA3AF] tabular-nums pl-4.5">
+                        <span style={{ color: sub.color }} className="font-medium">
+                          {sub.label}
+                        </span>{' '}
+                        · <span className="font-mono">{ses.date}</span> ·{' '}
+                        <span className="font-mono">
+                          {formatTime24(startMins)} – {formatTime24(endMins)}
+                        </span>
+                      </div>
+                      {ses.notes && (
+                        <p className="text-xs text-[#5A5A55] dark:text-[#9CA3AF] pl-4.5 line-clamp-2">
+                          {ses.notes}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2 pl-4.5 sm:pl-0 shrink-0">
+                      <span className="font-mono tabular-nums text-xs font-bold text-[#141413] dark:text-[#F3F4F6]">
+                        {formatDurationLabel(ses.durationMinutes)}
+                      </span>
+                      {ses.isManual && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEditManualSession(ses);
+                          }}
+                          aria-label={`Edit manual session ${ses.title}`}
+                          className="p-1.5 rounded-lg border border-[#E5E5E0] dark:border-[#232834] text-[#5A5A55] dark:text-[#9CA3AF] hover:text-[#141413] dark:hover:text-[#F3F4F6] cursor-pointer"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          );
+        })()}
+      </section>
     </div>
   );
 };

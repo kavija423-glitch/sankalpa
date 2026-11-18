@@ -9,6 +9,7 @@ import {
   Trash2,
   X,
   Calendar as CalendarIcon,
+  Clock,
   GripVertical,
   Check,
 } from 'lucide-react';
@@ -46,6 +47,8 @@ interface CalendarViewProps {
   onDeleteBlock: (blockId: string) => void;
   onScheduleTaskOnCalendar: (taskId: string, date: string, startMinutes: number) => void;
   onStartTimerFromBlock: (block: CalendarBlock) => void;
+  onOpenLogSession: () => void;
+  onEditManualSession: (session: StudySession) => void;
 }
 
 interface ActiveDragPayload {
@@ -87,6 +90,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   onDeleteBlock,
   onScheduleTaskOnCalendar,
   onStartTimerFromBlock,
+  onOpenLogSession,
+  onEditManualSession,
 }) => {
   const todayISO = toISODateLocal(new Date());
   const [anchorDate, setAnchorDate] = useState(todayISO);
@@ -642,6 +647,16 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
 
             <button
               type="button"
+              onClick={onOpenLogSession}
+              data-testid="calendar-log-session-btn"
+              className="min-h-[38px] px-3 py-1.5 rounded-lg border border-[#E5E5E0] dark:border-[#232834] bg-white dark:bg-[#13161D] text-xs font-semibold text-[#141413] dark:text-[#F3F4F6] hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer"
+            >
+              <Clock className="w-3.5 h-3.5 text-[#4338CA] dark:text-[#818CF8]" />
+              <span>+ Log Session</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() =>
                 setEditingBlock({
                   title: '',
@@ -763,9 +778,24 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 const dayBlocks = activeBlocks.filter((b) => b.date === iso);
                 const laidOutBlocks = computeOverlapLayout(dayBlocks);
 
+                const activeDaySessions = sessions.filter((s) => !s.deletedAt && s.date === iso);
+                const dayManualSpans = activeDaySessions
+                  .filter((s) => Boolean(s.isManual))
+                  .map((s) => {
+                    const dt = new Date(s.startTimestamp);
+                    const startMinutes = dt.getHours() * 60 + dt.getMinutes();
+                    return {
+                      id: s.id,
+                      startMinutes,
+                      durationMinutes: Math.max(15, s.durationMinutes),
+                      session: s,
+                    };
+                  });
+                const laidOutManualSessions = computeOverlapLayout(dayManualSpans);
+
                 const daySessions = showGhostOverlay
-                  ? sessions
-                      .filter((s) => s.date === iso)
+                  ? activeDaySessions
+                      .filter((s) => !s.isManual)
                       .map((s) => {
                         const dt = new Date(s.startTimestamp);
                         const startMinutes = dt.getHours() * 60 + dt.getMinutes();
@@ -893,16 +923,90 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                       );
                     })}
 
+                    {/* Manually Logged Recorded Session Blocks */}
+                    {laidOutManualSessions.map(({ item: ms, column, totalColumns }) => {
+                      const ses = ms.session;
+                      const sub = subjects[ses.subject] ?? subjects.general;
+                      const exactDuration = Math.max(1, ses.durationMinutes);
+                      const top = (ms.startMinutes / 60) * HOUR_HEIGHT;
+                      const height = Math.max(24, (exactDuration / 60) * HOUR_HEIGHT);
+                      const overlapsPlanned = dayBlocks.some(
+                        (blk) =>
+                          blk.startMinutes < ms.startMinutes + ms.durationMinutes &&
+                          blk.startMinutes + blk.durationMinutes > ms.startMinutes
+                      );
+                      const laneWidth = overlapsPlanned ? 39 / totalColumns : 96 / totalColumns;
+                      const laneLeft = overlapsPlanned ? 59 + column * laneWidth : 2 + column * laneWidth;
+
+                      return (
+                        <button
+                          key={`manual_${ses.id}`}
+                          type="button"
+                          data-calendar-block="true"
+                          data-testid="calendar-manual-session"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEditManualSession(ses);
+                          }}
+                          style={{
+                            top: `${top}px`,
+                            height: `${height}px`,
+                            left: `${laneLeft}%`,
+                            width: `${laneWidth - 1}%`,
+                            backgroundColor: `${sub.color}1F`,
+                            borderColor: sub.color,
+                          }}
+                          title={`Manual: ${ses.title} (${formatDurationLabel(exactDuration)}) — Click to edit`}
+                          className="absolute z-15 rounded-lg border px-2 py-1 text-left overflow-hidden cursor-pointer hover:brightness-95 transition-all"
+                        >
+                          <div className="flex items-center justify-between gap-1">
+                            <div className="flex items-center gap-1 min-w-0">
+                              <span
+                                className="w-3.5 h-3.5 rounded-xs flex items-center justify-center shrink-0 text-white"
+                                style={{ backgroundColor: sub.color }}
+                              >
+                                <Check className="w-2.5 h-2.5" />
+                              </span>
+                              <span className="text-[11px] font-semibold text-[#141413] dark:text-[#F3F4F6] truncate leading-tight">
+                                {ses.title}
+                              </span>
+                            </div>
+                            <span
+                              className="shrink-0 rounded px-1 py-0.2 text-[9px] font-semibold uppercase tracking-wide border"
+                              style={{
+                                color: sub.color,
+                                borderColor: `${sub.color}66`,
+                                backgroundColor: `${sub.color}14`,
+                              }}
+                            >
+                              Manual
+                            </span>
+                          </div>
+                          {height >= 36 && (
+                            <div className="text-[10px] font-mono tabular-nums text-[#5A5A55] dark:text-[#D1D5DB] truncate mt-0.5">
+                              {formatTime24(ms.startMinutes)} – {formatTime24(ms.startMinutes + exactDuration)} · {formatDurationLabel(exactDuration)}
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+
                     {/* Scheduled Planned Blocks */}
                     {laidOutBlocks.map(({ item: blk, column, totalColumns }) => {
                       const sub = subjects[blk.subject] ?? subjects.general;
                       const top = (blk.startMinutes / 60) * HOUR_HEIGHT;
                       const height = Math.max(24, (blk.durationMinutes / 60) * HOUR_HEIGHT);
-                      const hasGhostOverlap = daySessions.some(
-                        (gs) =>
-                          gs.startMinutes < blk.startMinutes + blk.durationMinutes &&
-                          gs.startMinutes + gs.durationMinutes > blk.startMinutes
-                      );
+                      const hasGhostOverlap =
+                        daySessions.some(
+                          (gs) =>
+                            gs.startMinutes < blk.startMinutes + blk.durationMinutes &&
+                            gs.startMinutes + gs.durationMinutes > blk.startMinutes
+                        ) ||
+                        dayManualSpans.some(
+                          (ms) =>
+                            ms.startMinutes < blk.startMinutes + blk.durationMinutes &&
+                            ms.startMinutes + ms.durationMinutes > blk.startMinutes
+                        );
                       const widthPct = hasGhostOverlap ? 55 / totalColumns : 96 / totalColumns;
                       const leftPct = 2 + column * widthPct;
                       const isBeingDragged =

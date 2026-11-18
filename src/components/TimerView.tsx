@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Play, Pause, RotateCcw, Square, Star, Clock, CheckCircle2 } from 'lucide-react';
+import { Play, Pause, RotateCcw, Square, Star, Clock, CheckCircle2, Pencil } from 'lucide-react';
 import type {
   ActiveTimerState,
   CalendarBlock,
@@ -23,6 +23,8 @@ interface TimerViewProps {
   onToggleRun: () => void;
   onReset: () => void;
   onRequestLogStop: () => void;
+  onOpenLogSession: () => void;
+  onEditManualSession: (session: StudySession) => void;
 }
 
 const MODES: Array<{ id: TimerMode; label: string; sub: string; durationMs: number | null }> = [
@@ -43,6 +45,8 @@ export const TimerView: React.FC<TimerViewProps> = ({
   onToggleRun,
   onReset,
   onRequestLogStop,
+  onOpenLogSession,
+  onEditManualSession,
 }) => {
   const [showLinkPicker, setShowLinkPicker] = useState(false);
   const todayISO = toISODateLocal(new Date());
@@ -52,7 +56,7 @@ export const TimerView: React.FC<TimerViewProps> = ({
     .sort((a, b) => a.startMinutes - b.startMinutes);
   const pendingTasks = tasks.filter((t) => !t.completed).slice(0, 8);
   const todaySessions = sessions
-    .filter((s) => s.date === todayISO)
+    .filter((s) => !s.deletedAt && s.date === todayISO)
     .sort((a, b) => b.endTimestamp - a.endTimestamp);
 
   const activeSubject = subjects[timer.subject] ?? subjects.general;
@@ -124,8 +128,19 @@ export const TimerView: React.FC<TimerViewProps> = ({
             Timestamp-accurate focus clock · Survives screen lock and tab switching
           </p>
         </div>
-        <div className="text-sm text-[#5A5A55] dark:text-[#9CA3AF] tabular-nums">
-          Logged today: <strong className="text-[#141413] dark:text-[#F3F4F6] font-mono">{formatDurationLabel(totalTodayMinutes)}</strong>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="text-sm text-[#5A5A55] dark:text-[#9CA3AF] tabular-nums">
+            Logged today: <strong className="text-[#141413] dark:text-[#F3F4F6] font-mono">{formatDurationLabel(totalTodayMinutes)}</strong>
+          </div>
+          <button
+            type="button"
+            onClick={onOpenLogSession}
+            data-testid="timer-log-session-btn"
+            className="min-h-[38px] px-3.5 py-1.5 rounded-lg border border-[#E5E5E0] dark:border-[#232834] bg-white dark:bg-[#13161D] text-xs font-semibold text-[#141413] dark:text-[#F3F4F6] hover:bg-black/5 dark:hover:bg-white/5 flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
+          >
+            <Clock className="w-3.5 h-3.5 text-[#4338CA] dark:text-[#818CF8]" />
+            <span>+ Log Session</span>
+          </button>
         </div>
       </div>
 
@@ -386,13 +401,33 @@ export const TimerView: React.FC<TimerViewProps> = ({
                   const startDt = new Date(ses.startTimestamp);
                   const startMins = startDt.getHours() * 60 + startDt.getMinutes();
                   return (
-                    <li key={ses.id} className="py-2.5 flex items-start justify-between gap-3">
+                    <li
+                      key={ses.id}
+                      onClick={ses.isManual ? () => onEditManualSession(ses) : undefined}
+                      className={`py-2.5 flex items-start justify-between gap-3 ${
+                        ses.isManual ? 'cursor-pointer hover:bg-black/3 dark:hover:bg-white/3 rounded-lg px-2 -mx-2' : ''
+                      }`}
+                    >
                       <div className="min-w-0">
-                        <div className="text-xs font-semibold text-[#141413] dark:text-[#F3F4F6] truncate">
-                          {ses.title}
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="text-xs font-semibold text-[#141413] dark:text-[#F3F4F6] truncate">
+                            {ses.title}
+                          </span>
+                          {ses.isManual && (
+                            <span
+                              className="shrink-0 rounded px-1.5 py-0.2 text-[9px] font-semibold uppercase tracking-wide border"
+                              style={{
+                                color: sub.color,
+                                borderColor: `${sub.color}66`,
+                                backgroundColor: `${sub.color}14`,
+                              }}
+                            >
+                              Manual
+                            </span>
+                          )}
                         </div>
                         <div className="text-[11px] text-[#5A5A55] dark:text-[#9CA3AF] tabular-nums">
-                          {sub.label} · {formatTime24(startMins)} · {ses.durationMinutes}m
+                          {sub.label} · {formatTime24(startMins)} · {formatDurationLabel(ses.durationMinutes)}
                         </div>
                         {ses.notes && (
                           <p className="text-[11px] text-[#5A5A55] dark:text-[#9CA3AF] mt-1 line-clamp-2">
@@ -400,12 +435,18 @@ export const TimerView: React.FC<TimerViewProps> = ({
                           </p>
                         )}
                       </div>
-                      <div className="flex items-center gap-0.5 shrink-0 text-amber-500" aria-label={`Rated ${ses.rating} out of 5`}>
-                        <Star className="w-3.5 h-3.5 fill-current" />
-                        <span className="font-mono text-xs tabular-nums text-[#141413] dark:text-[#F3F4F6]">
-                          {ses.rating}
+                      {ses.isManual ? (
+                        <span className="text-[#5A5A55] dark:text-[#9CA3AF] shrink-0 pt-0.5" title="Edit manual session">
+                          <Pencil className="w-3.5 h-3.5" />
                         </span>
-                      </div>
+                      ) : (
+                        <div className="flex items-center gap-0.5 shrink-0 text-amber-500" aria-label={`Rated ${ses.rating} out of 5`}>
+                          <Star className="w-3.5 h-3.5 fill-current" />
+                          <span className="font-mono text-xs tabular-nums text-[#141413] dark:text-[#F3F4F6]">
+                            {ses.rating}
+                          </span>
+                        </div>
+                      )}
                     </li>
                   );
                 })}
